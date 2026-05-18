@@ -1184,7 +1184,725 @@
   </style>
 </head>
 
+<body>
 
+
+
+
+  <div id="login-screen"
+    style="position:fixed; inset:0; background:var(--bg0); z-index:20000; display:flex; align-items:center; justify-content:center;">
+    <div class="card" style="width:360px; padding:30px; text-align:center; box-shadow:var(--shadow-md);">
+      <div class="logo-title" style="font-size:24px; margin-bottom:10px;">助成金ナビ</div>
+      <div class="logo-sub" style="margin-bottom:30px;">ログインしてシステムを開始</div>
+      <div class="form-group" style="text-align:left;">
+        <div class="form-label">メールアドレス</div>
+        <input type="email" id="login-email" class="finp" placeholder="example@mail.com">
+      </div>
+      <div class="form-group" style="text-align:left;">
+        <div class="form-label">パスワード</div>
+        <input type="password" id="login-password" class="finp" placeholder="••••••••">
+      </div>
+      <button type="button" id="login-exec" class="btn btn-primary" style="width:100%; height:45px;">
+  ログイン
+</button>
+      <div id="login-error" style="color:var(--red); font-size:12px; margin-top:12px; display:none;"></div>
+    </div>
+  </div>
+
+
+
+  <div id="notif-bar"
+    style="display:none; position:fixed; top:20px; left:50%; transform:translateX(-50%); width:33%; min-width:300px; height:auto; background: linear-gradient(135deg, #1e3c72, #2a5298); color:white; z-index:10000; overflow:hidden; border-radius:30px; box-shadow: 0 15px 35px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15); backdrop-filter: blur(8px); flex-direction: column; justify-content: center; padding: 8px 20px; border-bottom: 3px solid #00d2ff;">
+    <div style="font-size: 9px; opacity: 0.7; text-align: center; letter-spacing: 0.2em; margin-bottom: 2px;">OFFICIAL
+      ANNOUNCEMENT</div>
+    <div id="notif-container"
+      style="width:100%; overflow:hidden; position:relative; height:22px; display:flex; align-items:center;">
+      <div id="notif-text"
+        style="white-space:nowrap; position:absolute; font-size:14px; font-weight:bold; text-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SIDEBAR ═══ -->
+
+
+  <nav class="sidebar">
+    <div class="logo">
+      <div class="logo-title">助成金ナビ</div>
+      <div class="logo-sub">GRANT NAVIGATION SYSTEM</div>
+    </div>
+    <div class="nav-item on" data-sc="home">
+      <div class="nav-dot" style="background:var(--blue)"></div>🏠 ホーム
+    </div>
+    <div class="nav-sec">面談</div>
+    <div class="nav-item" data-sc="hearing">
+      <div class="nav-dot" style="background:var(--green)"></div>🎙 ヒアリング
+    </div>
+    <div class="nav-item" data-sc="memo-history">
+      <div class="nav-dot" style="background:var(--teal)"></div>📋 面談・メモ履歴
+    </div>
+    <div class="nav-sec">助成金・資料</div>
+    <div class="nav-item" data-sc="grants">
+      <div class="nav-dot" style="background:var(--amber)"></div>💰 助成金一覧
+    </div>
+    <div class="nav-item" data-sc="docs">
+      <div class="nav-dot" style="background:var(--purple)"></div>📁 資料ライブラリ
+    </div>
+    <div class="nav-sec">コミュニケーション</div>
+    <div class="nav-item" data-sc="board" style="justify-content:space-between;">
+      <div style="display:flex;align-items:center;gap:9px;"><div class="nav-dot" style="background:var(--red)"></div>📣 掲示板</div>
+      <span id="board-badge" style="display:none;background:var(--red);color:#fff;border-radius:20px;font-size:10px;font-weight:800;padding:1px 7px;min-width:18px;text-align:center;"></span>
+    </div>
+    <div class="nav-item" data-sc="calendar">
+      <div class="nav-dot" style="background:var(--teal)"></div>📅 カレンダー
+    </div>
+    <div class="nav-item" data-sc="message">
+      <div class="nav-dot" style="background:var(--blue)"></div>✉️ メッセージ
+    </div>
+    <div class="nav-sec">設定</div>
+    <div class="nav-item" data-sc="admin">
+      <div class="nav-dot" style="background:var(--t3)"></div>👥 従業員管理
+    </div>
+    <div class="nav-item" data-sc="password">
+      <div class="nav-dot" style="background:var(--blue)"></div>🔑 パスワード変更
+    </div>
+    <div class="sb-footer">
+      <div id="sb-user" style="font-weight:700;font-size:12px;color:var(--t2);">ゲスト</div>
+      <div class="sb-ver">v2.0.0</div>
+    </div>
+
+    
+    
+  </nav>
+
+  <!-- ═══ MAIN ═══ -->
+  <div class="main">
+    <div class="topbar">
+      <span class="topbar-title" id="page-title">ホーム</span>
+      <button class="btn btn-sm" style="margin-right:6px;" onclick="newHearing()">🆕 新規ヒアリング</button>
+      <button class="btn btn-sm btn-primary" onclick="navTo('hearing')">＋ ヒアリング開始</button>
+    </div>
+    <div class="content">
+
+      <!-- ══ HOME ══ -->
+      <div id="s-home" class="screen on">
+        <!-- 検索 -->
+        <div class="mb18" style="max-width:640px;">
+          <div class="search-bar">
+            <input id="home-search" placeholder="資料名・助成金名・キーワードで検索…　例：男性育休、正社員化、IT導入"
+              oninput="doHomeSearch(this.value)">
+          </div>
+          <div class="search-drop" id="home-search-drop"></div>
+        </div>
+        <!-- KPI -->
+        <div class="g4 mb18">
+          <div class="kpi">
+            <div class="kpi-num" id="h-grants">—</div>
+            <div class="kpi-label">助成金数</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-num" id="h-docs">—</div>
+            <div class="kpi-label">資料数</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-num" id="h-kw">—</div>
+            <div class="kpi-label">キーワード数</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-num" id="h-memos">—</div>
+            <div class="kpi-label">面談メモ数</div>
+          </div>
+        </div>
+        <!-- 全キーワード -->
+        <div class="card mb18 card-sm" style="cursor:pointer;" onclick="toggleAllKw()">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div style="font-size:12px;font-weight:800;color:var(--t3);letter-spacing:.07em;">全キーワード一覧</div>
+            <span id="kw-toggle-icon" style="color:var(--t3);font-size:12px;">▼ 展開</span>
+          </div>
+          <div id="all-kw-list" style="display:none;margin-top:12px;"></div>
+        </div>
+        <!-- よく使う助成金 -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <div style="font-size:12px;font-weight:800;color:var(--t3);letter-spacing:.07em;">★ よく使う助成金</div>
+        </div>
+        <div id="home-grants" class="g3 mb18"></div>
+        <!-- 最近の資料 -->
+        <div style="font-size:12px;font-weight:800;color:var(--t3);letter-spacing:.07em;margin-bottom:10px;">
+          最近追加した資料（5件）</div>
+        <div id="home-docs" class="mb12"></div>
+      </div>
+
+      <!-- ══ HEARING ══ -->
+      <div id="s-hearing" class="screen">
+        <!-- 企業情報 -->
+        <div class="card mb12 card-sm">
+          <div class="g2">
+            <div class="form-group" style="margin-bottom:0;">
+              <div class="form-label">企業名<span class="req">*</span></div><input class="finp" id="hv-company"
+                placeholder="株式会社〇〇">
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+              <div class="form-label">担当者名</div><input class="finp" id="hv-contact" placeholder="山田 太郎">
+            </div>
+          </div>
+        </div>
+        <div class="hearing-wrap">
+          <!-- Left -->
+          <div class="hearing-col">
+            <!-- チェックリスト -->
+            <div class="card card-sm">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                <div style="font-size:13px;font-weight:800;">ヒアリングチェックリスト</div>
+                <button class="btn btn-xs btn-primary" onclick="openCheckAddModal()">＋ 追加</button>
+              </div>
+              <div id="check-list"></div>
+            </div>
+            <!-- メモ -->
+            <div class="memo-box">
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <div style="font-size:13px;font-weight:800;">ヒアリングメモ</div>
+                <div style="display:flex;gap:6px;">
+                  <button class="btn btn-sm" onclick="exportMemoPDF()">📄 PDF出力</button>
+                  <button class="btn btn-sm btn-primary" onclick="window.saveMemo()">💾 保存</button>
+                </div>
+              </div>
+              <div style="font-size:11px;color:var(--t3);">キーワードを入力すると右側に助成金・資料が自動表示されます</div>
+              <textarea class="memo-ta" id="memo-text"
+                placeholder="例）&#10;・従業員15名、製造業&#10;・正社員を採用予定&#10;・男性育休を推進したい&#10;・ITシステムを導入したい"
+                oninput="onMemoInput()"></textarea>
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div style="font-size:11px;color:var(--t3);" id="memo-char">0文字</div>
+                <button class="btn btn-xs"
+                  onclick="document.getElementById('memo-text').value='';onMemoInput();">クリア</button>
+              </div>
+            </div>
+            <!-- 過去メモ読み込み -->
+            <div class="card card-sm">
+              <div style="font-size:12px;font-weight:700;color:var(--t2);margin-bottom:8px;">過去の面談メモを読み込む</div>
+              <div style="display:flex;gap:8px;">
+                <select class="fsel" id="past-memo-sel" style="flex:1;font-size:12px;"></select>
+                <button class="btn btn-sm" onclick="loadPastMemo()">読み込む</button>
+              </div>
+            </div>
+            <!-- カレンダーへ -->
+            <div class="card card-sm" style="background:var(--blue-bg);border-color:var(--blue2);">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <span style="font-size:20px;">📅</span>
+                <div style="flex:1;">
+                  <div style="font-size:13px;font-weight:700;color:var(--blue);">日程調整・次回面談を設定</div>
+                  <div style="font-size:11px;color:var(--t3);">Googleカレンダーで予定を管理</div>
+                </div>
+                <button class="btn btn-sm btn-primary" onclick="navTo('calendar')">カレンダーへ</button>
+              </div>
+            </div>
+          </div>
+          <!-- Right: キーワード提案（固定） -->
+          <div class="hearing-col sticky-col">
+            <div style="font-size:12px;font-weight:800;color:var(--t3);letter-spacing:.06em;">🔍 キーワード自動提案</div>
+            <div id="keyword-hits">
+              <div class="no-hits">メモを書くと<br>関連する助成金と資料が<br>自動で表示されます</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ MEMO HISTORY ══ -->
+      <div id="s-memo-history" class="screen">
+        <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+          <div class="search-bar" style="flex:1;max-width:340px;"><input id="mh-search" placeholder="企業名・担当者名で検索…"
+              oninput="filterMemos()"></div>
+        </div>
+        <div class="card" style="padding:0;">
+          <div class="tbl-wrap">
+            <table class="tbl">
+              <thead>
+                <tr>
+                  <th>日付</th>
+                  <th>企業名</th>
+                  <th>担当者</th>
+                  <th>メモ（一部）</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="memo-list"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ GRANTS ══ -->
+      <div id="s-grants" class="screen">
+        <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center;">
+          <div class="search-bar" style="flex:1;max-width:440px;"><input id="grant-search" placeholder="助成金名・キーワードで検索…" oninput="filterGrants()"></div>
+          <button class="btn btn-sm btn-primary" onclick="openGrantEditModal()">＋ 助成金追加</button>
+        </div>
+        <div id="grant-list"></div>
+      </div>
+
+      <!-- ══ GRANT DETAIL ══ -->
+      <div id="s-grant-detail" class="screen">
+        <button class="btn btn-sm mb18" onclick="navTo('grants')">← 一覧に戻る</button>
+        <div id="grant-detail-body"></div>
+      </div>
+
+      <!-- ══ DOCS ══ -->
+      <div id="s-docs" class="screen">
+        <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center;">
+          <div class="search-bar" style="flex:1;max-width:440px;"><input id="doc-search" placeholder="資料名・キーワードで検索…" oninput="filterDocs()"></div>
+          <button class="btn btn-sm btn-primary" onclick="openDocModal()">＋ 資料を追加</button>
+        </div>
+        <div id="doc-list"></div>
+      </div>
+
+      <!-- ══ BOARD ══ -->
+      <div id="s-board" class="screen">
+        <!-- 未読通知バナー（確認ボタンまで表示） -->
+        <div id="board-unread-banner" style="display:none;background:var(--red-bg);border:1.5px solid var(--red);border-radius:var(--rl);padding:14px 18px;margin-bottom:16px;">
+          <div style="display:flex;align-items:flex-start;gap:10px;">
+            <span style="font-size:20px;flex-shrink:0;">🔔</span>
+            <div style="flex:1;">
+              <div style="font-size:13px;font-weight:800;color:var(--red);margin-bottom:6px;">未読のお知らせがあります</div>
+              <div id="board-unread-items"></div>
+            </div>
+            <button class="btn btn-xs btn-danger" onclick="clearAllUnread()">すべて確認済みにする</button>
+          </div>
+        </div>
+        <div class="card mb18">
+          <div style="font-size:14px;font-weight:800;margin-bottom:12px;">📣 お知らせを投稿</div>
+          <div class="form-group">
+            <div class="form-label">タイトル<span class="req">*</span></div><input class="finp" id="board-title" placeholder="例：キャリアアップ助成金の改定について">
+          </div>
+          <div class="form-group">
+            <div class="form-label">内容<span class="req">*</span></div><textarea class="ftxt" id="board-body" placeholder="全員に共有したい内容を入力してください…" style="min-height:100px;"></textarea>
+          </div>
+          <div class="btn-row" style="margin-top:10px;">
+            <button class="btn btn-primary" onclick="postBoard()">📤 投稿・通知する</button>
+          </div>
+        </div>
+        <div style="font-size:12px;font-weight:800;color:var(--t3);letter-spacing:.07em;margin-bottom:12px;">📋 投稿履歴</div>
+        <div id="board-list"></div>
+      </div>
+
+      <!-- ══ CALENDAR ══ -->
+      <div id="s-calendar" class="screen">
+        <div class="card mb14 card-sm" style="background:var(--amber-bg);border-color:var(--amber);">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:18px;">📅</span>
+            <div>
+              <div style="font-size:13px;font-weight:700;color:var(--amber);">Googleカレンダー連携</div>
+
+              <div style="font-size:12px;color:var(--t2);">下の「Googleカレンダーで開く」からアクセスできます。予定追加後に自動同期されます。</div>
+            </div>
+            <a href="https://calendar.google.com" target="_blank" class="btn btn-sm"
+              style="flex-shrink:0;text-decoration:none;">Googleカレンダーで開く 🔗</a>
+          </div>
+        </div>
+        <!-- メンバーフィルター -->
+        <div style="font-size:12px;font-weight:700;color:var(--t2);margin-bottom:8px;">メンバーのカレンダーを表示</div>
+        <div class="cal-members" id="cal-members"></div>
+        <!-- 月ナビ -->
+        <div class="cal-nav">
+          <button class="btn btn-sm" onclick="calPrev()">◀</button>
+          <div class="cal-nav-title" id="cal-title"></div>
+          <button class="btn btn-sm" onclick="calNext()">▶</button>
+          <button class="btn btn-sm btn-primary" onclick="openCalEventModal()">＋ 予定追加</button>
+        </div>
+        <!-- カレンダーグリッド -->
+        <div class="cal-grid" id="cal-head"></div>
+        <div class="cal-grid" id="cal-grid" style="margin-top:2px;"></div>
+      </div>
+
+      <!-- ══ MESSAGE ══ -->
+      <div id="s-message" class="screen">
+        <!-- 未送信バナー -->
+        <div id="msg-unsent-banner" style="display:none;background:var(--amber-bg);border:1.5px solid var(--amber);border-radius:var(--rl);padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:10px;">
+          <span style="font-size:18px;">📬</span>
+          <div style="flex:1;font-size:13px;color:var(--amber);font-weight:700;" id="msg-unsent-text"></div>
+          <button class="btn btn-xs" onclick="navTo('message')">確認する</button>
+        </div>
+        <div class="g2" style="gap:18px;">
+          <!-- 作成 -->
+          <div class="msg-compose">
+            <div style="font-size:15px;font-weight:800;margin-bottom:16px;">✉️ メール作成・送信</div>
+            <input type="hidden" id="msg-edit-id">
+            <div class="form-group"><div class="form-label">宛先<span class="req">*</span></div>
+              <select class="fsel" id="msg-to-sel" onchange="onMsgToSel(this)"><option value="">メンバーから選択...</option></select>
+              <input class="finp" id="msg-to" placeholder="または直接メールアドレスを入力" type="email" style="margin-top:6px;">
+            </div>
+            <div class="form-group"><div class="form-label">件名<span class="req">*</span></div><input class="finp" id="msg-subject" placeholder="件名を入力"></div>
+            <div class="form-group"><div class="form-label">本文<span class="req">*</span></div><textarea class="ftxt" id="msg-body" placeholder="本文を入力…" style="min-height:140px;"></textarea></div>
+            <div class="form-group">
+              <div class="form-label">資料を添付（システム内の資料から選択）</div>
+              <div id="msg-doc-sel" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;min-height:28px;"></div>
+              <select class="fsel" id="msg-doc-picker" onchange="addMsgDoc(this)" style="width:auto;max-width:400px;"><option value="">＋ 資料を選択して添付...</option></select>
+            </div>
+            <div style="font-size:11px;color:var(--t3);background:var(--blue-bg);padding:8px 12px;border-radius:var(--r);margin-bottom:12px;">
+              💡 「送信」を押すと送信履歴に保存され、宛先のメールアドレスへ自動送信されます（EmailJS設定後）
+            </div>
+            <div class="btn-row" style="margin-top:8px;">
+              <button class="btn" onclick="clearMsg()">クリア</button>
+              <button class="btn btn-primary" onclick="sendMsg()">📤 送信する</button>
+            </div>
+          </div>
+          <!-- 送信履歴 -->
+          <div>
+            <div style="font-size:14px;font-weight:800;margin-bottom:12px;">📋 送信履歴</div>
+            <div id="msg-history-list"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ ADMIN ══ -->
+      <div id="s-admin" class="screen">
+        <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;align-items:center;">
+          <div style="font-size:16px;font-weight:900;">👥 従業員管理</div>
+        </div>
+        <!-- 従業員追加フォーム -->
+        <div class="card mb18">
+          <div style="font-size:14px;font-weight:800;margin-bottom:14px;">＋ 新規従業員を追加</div>
+          <div class="g2" style="gap:12px;">
+            <div class="form-group" style="margin-bottom:0;"><div class="form-label">名前<span class="req">*</span></div><input class="finp" id="adm-member-name" placeholder="田中 花子"></div>
+            <div class="form-group" style="margin-bottom:0;"><div class="form-label">メールアドレス</div><input class="finp" id="adm-member-email" placeholder="tanaka@company.jp"></div>
+          </div>
+          <div class="form-group" style="margin-top:10px;margin-bottom:0;"><div class="form-label">初期パスワード</div><input class="finp" type="password" id="adm-member-pass" placeholder="8文字以上"></div>
+          <div class="btn-row" style="margin-top:12px;"><button class="btn btn-primary" onclick="addMember()">＋ 追加</button></div>
+        </div>
+        <!-- 従業員一覧 -->
+        <div class="card" style="padding:0;">
+          <table class="tbl">
+            <thead><tr><th>名前</th><th>メールアドレス</th><th>操作</th></tr></thead>
+            <tbody id="admin-members"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ══ PASSWORD ══ -->
+      <div id="s-password" class="screen">
+  <div class="card" style="max-width:440px;">
+    <div style="font-size:15px;font-weight:800;margin-bottom:18px;">🔑 パスワード変更</div>
+    
+    <div class="form-group">
+      <div class="form-label form-group-name">名前:<input class="finp" id="pw-display-name" readonly style="background:var(--bg4); border:none; font-weight:bold;"></div>
+      
+    </div>
+    <div class="form-group">
+      <div class="form-label">メールアドレス</div>
+      <input class="finp" id="pw-display-email" readonly style="background:var(--bg4); border:none; color:var(--t3);">
+    </div>
+    
+    <div class="divider"></div>
+
+    <div class="form-group"><div class="form-label">現在のパスワード<span class="req">*</span></div><input class="finp" type="password" id="pw-current" placeholder="現在のパスワード"></div>
+    <div class="form-group"><div class="form-label">新しいパスワード<span class="req">*</span>（8文字以上）</div><input class="finp" type="password" id="pw-new" placeholder="新しいパスワード"></div>
+    <div class="form-group"><div class="form-label">確認（再入力）</div><input class="finp" type="password" id="pw-confirm" placeholder="同じパスワードを再入力"></div>
+    <div id="pw-err" style="font-size:12px;color:var(--red);margin-bottom:8px;display:none;"></div>
+    <button class="btn btn-primary" onclick="changePassword()">変更する</button>
+  </div>
+</div>
+
+    </div><!-- .content -->
+  </div><!-- .main -->
+
+  <!-- ════ MODALS ════ -->
+
+  <!-- 資料追加/編集 -->
+  <div class="modal-bg" id="doc-modal">
+    <div class="modal modal-lg">
+      <div class="modal-title" id="dm-title">📁 資料を追加</div>
+      <input type="hidden" id="dm-id">
+      <div>
+        <div class="form-group">
+          <div class="form-label">資料名<span class="req">*</span></div><input class="finp" id="dm-name"
+            placeholder="キャリアアップ助成金 申請マニュアル">
+        </div>
+        
+      </div>
+      <div class="form-group">
+        <div class="form-label">関連助成金</div><select class="fsel" id="dm-grant">
+          <option value="">なし（汎用資料）</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <div class="form-label">種別</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;" id="dm-type-btns">
+          <div class="btn btn-sm on" onclick="selDocType(this,'url')">🔗 URL</div>
+          <div class="btn btn-sm" onclick="selDocType(this,'pdf')">📄 PDF</div>
+          <div class="btn btn-sm" onclick="selDocType(this,'word')">📝 Word</div>
+          <div class="btn btn-sm" onclick="selDocType(this,'excel')">📊 Excel</div>
+          <div class="btn btn-sm" onclick="selDocType(this,'other')">📁 その他</div>
+        </div>
+        <input type="hidden" id="dm-type" value="url">
+      </div>
+      <div id="dm-url-grp" class="form-group">
+        <div class="form-label">URL</div><input class="finp" id="dm-url" placeholder="https://...">
+      </div>
+      <div id="dm-file-grp" class="form-group" style="display:none;">
+        <div class="form-label">ファイル名 / パス</div><input class="finp" id="dm-filename" placeholder="ファイル名を入力">
+        <div style="font-size:11px;color:var(--t3);margin-top:4px;">※ Supabase Storage設定後はファイルアップロードが可能になります</div>
+      </div>
+      <div class="form-group">
+        <div class="form-label">説明</div><textarea class="ftxt" id="dm-desc" placeholder="この資料の内容・用途"
+          style="min-height:60px;"></textarea>
+      </div>
+      <div class="form-group">
+        <div class="form-label">キーワード（複数設定可 — ヒアリング時に自動提案）</div>
+        <div style="display:flex;gap:8px;margin-bottom:8px;"><input class="finp" id="dm-kw-inp" placeholder="例：男性育休"
+            style="flex:1;" onkeydown="if(event.key==='Enter'){addDmKw();event.preventDefault();}"><button
+            class="btn btn-sm" onclick="addDmKw()">追加</button></div>
+        <div class="tags-wrap" id="dm-kw-tags"></div>
+      </div>
+      <div class="btn-row"><button class="btn" onclick="closeModal('doc-modal')">キャンセル</button><button
+          class="btn btn-primary" onclick="saveDoc()">保存</button></div>
+    </div>
+  </div>
+
+  <!-- 助成金追加/編集 -->
+  <div class="modal-bg" id="grant-modal">
+    <div class="modal modal-lg">
+  <div class="modal-title" id="gm-title">💰 助成金コースを追加</div>
+  <input type="hidden" id="gm-id">
+  
+  <div class="form-group">
+    <div class="form-label">助成金名<span class="req">*</span></div>
+    <input class="finp" id="gm-name" placeholder="キャリアアップ助成金（正社員化コース）">
+  </div>
+
+  <div class="form-group">
+    <div class="form-label">一言で言うと</div>
+    <input class="finp" id="gm-summary" placeholder="有期雇用から正社員へ転換した際に支給される助成金">
+  </div>
+      <div class="g2">
+        <div class="form-group">
+          <div class="form-label">助成金額（上限）</div><input class="finp" id="gm-amount" placeholder="最大80万円/人">
+        </div>
+        <div class="form-group">
+          <div class="form-label">手数料</div><input class="finp" id="gm-fee" placeholder="助成金額の20%">
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="form-label">申請期間・タイミング</div><input class="finp" id="gm-period"
+          placeholder="例：転換後6ヶ月後に申請、期限は転換後2年以内">
+      </div>
+      <div class="form-group">
+        <div class="form-label">詳細説明</div><textarea class="ftxt" id="gm-desc" placeholder="制度の詳細、対象者、条件など"></textarea>
+      </div>
+      <div class="form-group">
+        <div class="form-label">申請の流れ（1ステップごとに改行）</div><textarea class="ftxt" id="gm-flow"
+          placeholder="就業規則の整備&#10;転換対象者を選定&#10;正社員として転換&#10;6ヶ月分の賃金支払い&#10;申請書を労働局に提出" style="min-height:180px;font-size:14px;line-height:2;"></textarea>
+      </div>
+      <div class="form-group">
+        <div class="form-label">注意事項・備考</div><textarea class="ftxt" id="gm-note" placeholder="申請時の注意点、よくある失敗など…"
+          style="min-height:60px;"></textarea>
+      </div>
+      <div class="form-group">
+        <div class="form-label">キーワード（複数設定可）</div>
+        <div style="display:flex;gap:8px;margin-bottom:8px;"><input class="finp" id="gm-kw-inp"
+            placeholder="例：正社員化、パート転換" style="flex:1;"
+            onkeydown="if(event.key==='Enter'){addGmKw();event.preventDefault();}"><button class="btn btn-sm"
+            onclick="addGmKw()">追加</button></div>
+        <div class="tags-wrap" id="gm-kw-tags"></div>
+      </div>
+      <div class="form-group">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+          <input type="checkbox" id="gm-featured" style="width:16px;height:16px;accent-color:var(--blue);">
+          <span style="font-size:13px;color:var(--t2);font-weight:600;">★ よく使う助成金としてホームに表示</span>
+        </label>
+      </div>
+      <div class="btn-row"><button class="btn" onclick="closeModal('grant-modal')">キャンセル</button><button
+          class="btn btn-primary" onclick="saveGrant()">保存</button></div>
+    </div>
+  </div>
+
+
+<div class="modal-bg" id="modal-edit-member">
+  <div class="modal">
+    <div class="modal-title">👥 従業員情報を編集</div>
+    <input type="hidden" id="edit-member-id">
+    
+    <div class="form-group">
+      <div class="form-label">名前</div>
+      <input class="finp" id="edit-member-name" placeholder="名前を入力">
+    </div>
+    
+    <div class="form-group">
+      <div class="form-label">メールアドレス</div>
+      <input class="finp" id="edit-member-email" readonly style="background:var(--bg4); color:var(--t3);">
+      <div style="font-size:10px; color:var(--t3); margin-top:4px;">※メールアドレスは変更できません</div>
+    </div>
+    
+    <div class="form-group">
+      <div class="form-label">新しいパスワード（変更する場合のみ入力）</div>
+      <input class="finp" type="password" id="edit-member-pass" placeholder="8文字以上">
+    </div>
+
+    <div class="btn-row">
+      <button class="btn" onclick="closeModal('modal-edit-member')">キャンセル</button>
+      <button class="btn btn-primary" onclick="updateMember()">更新保存</button>
+    </div>
+  </div>
+</div>
+
+  <!-- チェック項目追加 -->
+  <div class="modal-bg" id="check-add-modal">
+    <div class="modal">
+      <div class="modal-title">ヒアリング項目を追加</div>
+      <input type="hidden" id="cam-id">
+      <div class="form-group">
+        <div class="form-label">質問・確認項目<span class="req">*</span></div><textarea class="ftxt" id="cam-text"
+          placeholder="例：従業員のうち有期雇用者は何名いますか？" style="min-height:80px;"></textarea>
+      </div>
+      <div class="btn-row"><button class="btn" onclick="closeModal('check-add-modal')">キャンセル</button><button
+          class="btn btn-primary" onclick="saveCheckItem()">保存</button></div>
+    </div>
+  </div>
+
+  <!-- メモ詳細/編集 -->
+  <div class="modal-bg" id="memo-modal">
+    <div class="modal modal-lg">
+      <div class="modal-title" id="mm-title">面談メモ</div>
+      <input type="hidden" id="mm-id">
+      <div class="g2 mb12">
+        <div class="form-group" style="margin-bottom:0;">
+          <div class="form-label">企業名</div><input class="finp" id="mm-company">
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <div class="form-label">担当者</div><input class="finp" id="mm-contact">
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="form-label">ヒアリングメモ</div><textarea class="ftxt" id="mm-text" style="min-height:200px;"></textarea>
+      </div>
+      <div class="btn-row">
+        <button class="btn" onclick="closeModal('memo-modal')">閉じる</button>
+        <button class="btn btn-sm" onclick="exportMemoModalPDF()">📄 PDF出力</button>
+        <button class="btn btn-primary" onclick="updateMemo()">更新</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- カレンダーイベント追加 -->
+  <div class="modal-bg" id="cal-event-modal">
+
+    <div class="modal">
+      <div class="modal-title" id="cal-modal-title">📅 予定を追加</div>
+
+      <input type="hidden" id="cev-id">
+      <div class="form-group">
+        <div class="form-label">タイトル<span class="req">*</span></div><input class="finp" id="cev-title"
+          placeholder="例：〇〇株式会社 面談">
+      </div>
+      <div class="g2">
+        <div class="form-group">
+          <div class="form-label">日付<span class="req">*</span></div><input class="finp" type="date" id="cev-date">
+        </div>
+        <div class="form-group">
+          <div class="form-label">時間</div><input class="finp" type="time" id="cev-time" value="10:00">
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="form-label">担当メンバー</div><select class="fsel" id="cev-member">
+          <option value="">なし</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <div class="form-label">メモ</div><textarea class="ftxt" id="cev-note" placeholder="予定の詳細"
+          style="min-height:60px;"></textarea>
+      </div>
+      <div class="form-group">
+        <div class="form-label" style="margin-bottom:8px;">カラー</div>
+        <div style="display:flex;gap:8px;">
+          <div onclick="selCalColor(this,'blue')"
+            style="width:24px;height:24px;border-radius:50%;background:var(--blue);cursor:pointer;border:3px solid var(--blue);">
+          </div>
+          <div onclick="selCalColor(this,'green')"
+            style="width:24px;height:24px;border-radius:50%;background:var(--green);cursor:pointer;"></div>
+          <div onclick="selCalColor(this,'amber')"
+            style="width:24px;height:24px;border-radius:50%;background:var(--amber);cursor:pointer;"></div>
+          <div onclick="selCalColor(this,'red')"
+            style="width:24px;height:24px;border-radius:50%;background:var(--red);cursor:pointer;"></div>
+        </div>
+        <input type="hidden" id="cev-color" value="blue">
+      </div>
+      <div
+        style="background:var(--blue-bg);border-radius:var(--r);padding:10px 12px;font-size:12px;color:var(--blue);margin-bottom:14px;">
+        💡 保存後、Googleカレンダーにも追加するボタンが表示されます
+      </div>
+      <div class="btn-row">
+        <button class="btn" onclick="closeModal('cal-event-modal')">キャンセル</button>
+        <button class="btn btn-danger btn-sm" id="cev-del-btn" onclick="deleteCalEvent()"
+          style="display:none;">削除</button>
+        <button class="btn btn-primary" onclick="saveCalEvent()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script type="module">
+
+    // ライブラリの読み込み
+import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai@0.12.0";
+
+// ここにご提示のキーを貼り付けました
+const GEMINI_API_KEY = "AIzaSyBw_7rxaeiginZmFFHh4zm8qPAfYShZ09M"; 
+const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+
+// これでAI(genAI)が使えるようになります
+
+
+
+async function runAiConsultant(text) {
+    const hitsEl = document.getElementById('keyword-hits');
+    if (!hitsEl) return;
+
+    // 現在の助成金リストを取得
+    const grantNames = window.GRANTS && window.GRANTS.length > 0 
+        ? window.GRANTS.map(g => g.name).join(', ')
+        : "キャリアアップ助成金, 両立支援助成金, IT導入補助金";
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+
+    const prompt = `助成金コンサルのプロとして回答してください。
+以下のメモを分析し、JSON形式 {"suggestions": [{"name": "助成金名", "reason": "理由"}], "missing": ["不足項目1", "不足項目2"]} で出力してください。
+1. 候補：${grantNames} から最適なものを最大2つ。
+2. 不足：申請要件を確認するために「次に聞くべきこと」を2つ。
+メモ：${text}`;
+
+    try {
+        const response = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+        });
+
+        const data = await response.json();
+        const rawText = data.candidates[0].content.parts[0].text;
+        const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+        
+        if (jsonMatch) {
+            const res = JSON.parse(jsonMatch[0]);
+            hitsEl.innerHTML = `
+                <div style="background:var(--blue-bg); padding:12px; border-radius:var(--r); margin-bottom:12px; border:1px solid var(--blue2);">
+                    <div style="font-weight:bold; color:var(--blue); font-size:12px; margin-bottom:8px;">💡 AIの推奨</div>
+                    ${res.suggestions.map(s => `
+                        <div style="margin-bottom:8px;">
+                            <div style="font-size:13px; font-weight:bold;">💰 ${s.name}</div>
+                            <div style="font-size:11px; color:var(--t2);">${s.reason}</div>
+                        </div>
+                    `).join('')}
+                </div>
+                <div style="background:var(--amber-bg); padding:12px; border-radius:var(--r); border:1px solid var(--amber);">
+                    <div style="font-weight:bold; color:var(--amber); font-size:12px; margin-bottom:8px;">🚩 不足している確認事項</div>
+                    <ul style="padding-left:18px; margin:0; font-size:12px; line-height:1.6;">
+                        ${res.missing.map(m => `<li>${m}</li>`).join('')}
+                    </ul>
+                </div>
+            `;
+        }
+    } catch (e) {
+        console.error("AI提案エラー:", e);
+    }
+}
 
 
     // ════════════════════════════════════════
