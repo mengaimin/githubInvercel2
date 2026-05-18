@@ -1,0 +1,3527 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>助成金ナビ</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --bg0: #f5f7ff;
+      --bg1: #eef2ff;
+      --bg2: #ffffff;
+      --bg3: #f0f4ff;
+      --bg4: #e8eeff;
+      --bg5: #dde5ff;
+      --border: rgba(74, 144, 232, 0.12);
+      --border2: rgba(74, 144, 232, 0.22);
+      --border3: rgba(74, 144, 232, 0.38);
+      --t1: #1a2340;
+      --t2: #4a5578;
+      --t3: #8892b0;
+      --t4: #c5cde8;
+      --blue: #3a7bd5;
+      --blue2: #5a9bf5;
+      --blue-bg: rgba(58, 123, 213, 0.09);
+      --blue-bg2: rgba(58, 123, 213, 0.16);
+      --green: #18a96a;
+      --green-bg: rgba(24, 169, 106, 0.1);
+      --amber: #d4890a;
+      --amber-bg: rgba(212, 137, 10, 0.1);
+      --red: #d94040;
+      --red-bg: rgba(217, 64, 64, 0.1);
+      --purple: #7c5cbf;
+      --purple-bg: rgba(124, 92, 191, 0.1);
+      --teal: #0fa8a0;
+      --teal-bg: rgba(15, 168, 160, 0.1);
+      --shadow: 0 2px 12px rgba(58, 123, 213, 0.08);
+      --shadow-md: 0 4px 24px rgba(58, 123, 213, 0.13);
+      --r: 8px;
+      --rl: 12px;
+      --rxl: 18px;
+      --sidebar: 230px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+      background: var(--bg0);
+      color: var(--t1);
+      height: 100vh;
+      display: flex;
+      overflow: hidden;
+      font-size: 14px;
+    }
+
+    /* ─── Sidebar ─── */
+    .sidebar {
+      width: var(--sidebar);
+      min-width: var(--sidebar);
+      background: var(--bg2);
+      border-right: 1.5px solid var(--border2);
+      display: flex;
+      flex-direction: column;
+      padding: 0 0 12px;
+      overflow-y: auto;
+      box-shadow: var(--shadow);
+    }
+
+    .logo {
+      padding: 18px 16px 14px;
+      border-bottom: 1.5px solid var(--border2);
+      margin-bottom: 8px;
+    }
+
+    .logo-title {
+      font-size: 16px;
+      font-weight: 900;
+      color: var(--blue);
+      letter-spacing: .02em;
+    }
+
+    .logo-sub {
+      font-size: 10px;
+      color: var(--t3);
+      margin-top: 2px;
+      letter-spacing: .06em;
+    }
+
+    .nav-sec {
+      font-size: 10px;
+      color: var(--t3);
+      letter-spacing: .12em;
+      padding: 14px 16px 4px;
+      font-weight: 800;
+    }
+
+    .nav-item {
+      padding: 9px 14px;
+      margin: 1px 8px;
+      border-radius: var(--r);
+      font-size: 13px;
+      color: var(--t2);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: all .15s;
+      user-select: none;
+      font-weight: 600;
+    }
+
+    .nav-item:hover {
+      background: var(--blue-bg);
+      color: var(--blue);
+    }
+
+    .nav-item.on {
+      background: var(--blue-bg2);
+      color: var(--blue);
+      font-weight: 700;
+    }
+
+    .nav-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .sb-footer {
+      margin-top: auto;
+      padding: 14px 16px 0;
+      border-top: 1.5px solid var(--border);
+      font-size: 11px;
+      color: var(--t3);
+    }
+
+    .sb-ver {
+      font-size: 10px;
+      color: var(--t4);
+      margin-top: 6px;
+    }
+
+    /* ─── Main ─── */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .topbar {
+      height: 52px;
+      background: var(--bg2);
+      border-bottom: 1.5px solid var(--border2);
+      display: flex;
+      align-items: center;
+      padding: 0 22px;
+      gap: 10px;
+      flex-shrink: 0;
+      box-shadow: var(--shadow);
+    }
+
+    .topbar-title {
+      font-size: 15px;
+      font-weight: 800;
+      flex: 1;
+      color: var(--t1);
+    }
+
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 22px;
+    }
+
+    .screen {
+      display: none;
+    }
+
+    .screen.on {
+      display: block;
+    }
+
+    /* ─── Buttons ─── */
+    .btn {
+      padding: 7px 16px;
+      border-radius: var(--r);
+      border: 1.5px solid var(--border2);
+      background: var(--bg2);
+      color: var(--t2);
+      font-size: 13px;
+      cursor: pointer;
+      transition: all .13s;
+      font-family: inherit;
+      white-space: nowrap;
+      font-weight: 600;
+    }
+
+    .btn:hover {
+      background: var(--blue-bg);
+      color: var(--blue);
+      border-color: var(--blue2);
+    }
+
+    .btn-primary {
+      background: var(--blue);
+      border-color: var(--blue);
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background: var(--blue2);
+      border-color: var(--blue2);
+      color: #fff;
+    }
+
+    .btn-success {
+      background: var(--green);
+      border-color: var(--green);
+      color: #fff;
+    }
+
+    .btn-success:hover {
+      opacity: .88;
+      color: #fff;
+    }
+
+    .btn-danger {
+      background: var(--red);
+      border-color: var(--red);
+      color: #fff;
+    }
+
+    .btn-danger:hover {
+      opacity: .88;
+      color: #fff;
+    }
+
+    .btn-sm {
+      padding: 5px 12px;
+      font-size: 12px;
+    }
+
+    .btn-xs {
+      padding: 3px 9px;
+      font-size: 11px;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 18px;
+    }
+
+    /* ─── Badges ─── */
+    .badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 20px;
+    }
+
+    .b-blue {
+      background: var(--blue-bg);
+      color: var(--blue);
+    }
+
+    .b-green {
+      background: var(--green-bg);
+      color: var(--green);
+    }
+
+    .b-amber {
+      background: var(--amber-bg);
+      color: var(--amber);
+    }
+
+    .b-red {
+      background: var(--red-bg);
+      color: var(--red);
+    }
+
+    .b-purple {
+      background: var(--purple-bg);
+      color: var(--purple);
+    }
+
+    .b-teal {
+      background: var(--teal-bg);
+      color: var(--teal);
+    }
+
+    .b-gray {
+      background: var(--bg3);
+      color: var(--t2);
+    }
+
+    /* ─── Cards ─── */
+    .card {
+      background: var(--bg2);
+      border: 1.5px solid var(--border);
+      border-radius: var(--rl);
+      padding: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .card-sm {
+      padding: 14px;
+    }
+
+    .card-title {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--t3);
+      letter-spacing: .09em;
+      margin-bottom: 14px;
+    }
+
+    .g2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .g3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+
+    .g4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    .mb8 {
+      margin-bottom: 8px;
+    }
+
+    .mb12 {
+      margin-bottom: 12px;
+    }
+
+    .mb18 {
+      margin-bottom: 18px;
+    }
+
+    .mb24 {
+      margin-bottom: 24px;
+    }
+
+    .divider {
+      height: 1.5px;
+      background: var(--border);
+      margin: 16px 0;
+    }
+
+    /* ─── Forms ─── */
+    .form-group {
+      margin-bottom: 13px;
+    }
+
+    .form-label {
+      font-size: 12px;
+      color: var(--t2);
+      margin-bottom: 5px;
+      font-weight: 600;
+    }
+
+    .req {
+      color: var(--red);
+      margin-left: 2px;
+    }
+
+    .finp,
+    .fsel,
+    .ftxt {
+      width: 100%;
+      background: var(--bg3);
+      border: 1.5px solid var(--border2);
+      border-radius: var(--r);
+      color: var(--t1);
+      font-size: 13px;
+      padding: 8px 12px;
+      outline: none;
+      transition: border-color .13s;
+      font-family: inherit;
+    }
+
+    .finp:focus,
+    .fsel:focus,
+    .ftxt:focus {
+      border-color: var(--blue);
+      background: var(--bg2);
+    }
+
+    .ftxt {
+      resize: vertical;
+      min-height: 80px;
+      line-height: 1.7;
+    }
+
+    .fsel option {
+      background: var(--bg2);
+    }
+
+    /* ─── Table ─── */
+    .tbl-wrap {
+      overflow-x: auto;
+    }
+
+    .tbl {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .tbl th {
+      padding: 10px 14px;
+      text-align: left;
+      font-size: 11px;
+      color: var(--t3);
+      font-weight: 800;
+      letter-spacing: .07em;
+      border-bottom: 1.5px solid var(--border2);
+      background: var(--bg3);
+    }
+
+    .tbl td {
+      padding: 11px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tbl tr:hover td {
+      background: var(--bg3);
+    }
+
+    .tbl tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* ─── Tags ─── */
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: var(--blue-bg);
+      border: 1px solid var(--border2);
+      border-radius: 20px;
+      font-size: 11px;
+      padding: 3px 10px;
+      color: var(--blue);
+      font-weight: 600;
+    }
+
+    .tag .del-tag {
+      cursor: pointer;
+      color: var(--t3);
+      font-size: 13px;
+      line-height: 1;
+      transition: color .1s;
+    }
+
+    .tag .del-tag:hover {
+      color: var(--red);
+    }
+
+    .tags-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      min-height: 28px;
+    }
+
+    /* ─── Search ─── */
+    .search-bar {
+      position: relative;
+    }
+
+    .search-bar input {
+      background: var(--bg2);
+      border: 1.5px solid var(--border2);
+      border-radius: var(--rl);
+      color: var(--t1);
+      font-size: 14px;
+      padding: 10px 16px 10px 42px;
+      outline: none;
+      width: 100%;
+      transition: all .13s;
+      font-family: inherit;
+      box-shadow: var(--shadow);
+    }
+
+    .search-bar input:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px var(--blue-bg);
+    }
+
+    .search-bar::before {
+      content: "🔍";
+      position: absolute;
+      left: 13px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 15px;
+      pointer-events: none;
+    }
+
+    .search-drop {
+      background: var(--bg2);
+      border: 1.5px solid var(--border2);
+      border-radius: var(--rl);
+      margin-top: 6px;
+      overflow: hidden;
+      box-shadow: var(--shadow-md);
+      display: none;
+    }
+
+    .sri {
+      padding: 12px 16px;
+      cursor: pointer;
+      border-bottom: 1px solid var(--border);
+      transition: background .1s;
+    }
+
+    .sri:last-child {
+      border-bottom: none;
+    }
+
+    .sri:hover {
+      background: var(--blue-bg);
+    }
+
+    .sri-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--t1);
+      margin-bottom: 3px;
+    }
+
+    .sri-meta {
+      font-size: 11px;
+      color: var(--t3);
+    }
+
+    /* ─── KPI ─── */
+    .kpi {
+      background: var(--bg2);
+      border: 1.5px solid var(--border);
+      border-radius: var(--rl);
+      padding: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .kpi-num {
+      font-size: 30px;
+      font-weight: 900;
+      color: var(--blue);
+      line-height: 1;
+    }
+
+    .kpi-label {
+      font-size: 11px;
+      color: var(--t3);
+      margin-top: 5px;
+      font-weight: 600;
+      letter-spacing: .04em;
+    }
+
+    /* ─── Hearing ─── */
+    .hearing-wrap {
+      display: grid;
+      grid-template-columns: 1fr 350px;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .hearing-col {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    /* 右カラム（キーワード提案）を画面に固定 */
+    .hearing-col.sticky-col {
+      position: sticky;
+      top: 0;
+      max-height: calc(100vh - 120px);
+      overflow-y: auto;
+    }
+
+    .memo-box {
+      background: var(--bg2);
+      border: 1.5px solid var(--border2);
+      border-radius: var(--rl);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      box-shadow: var(--shadow);
+    }
+
+    .memo-ta {
+      flex: 1;
+      background: var(--bg3);
+      border: 1.5px solid var(--border);
+      border-radius: var(--r);
+      color: var(--t1);
+      font-size: 14px;
+      padding: 14px;
+      outline: none;
+      resize: vertical;
+      font-family: inherit;
+      line-height: 1.9;
+      min-height: 220px;
+      transition: border-color .13s;
+    }
+
+    .memo-ta:focus {
+      border-color: var(--blue);
+      background: var(--bg2);
+    }
+
+    .hit-card {
+      background: var(--bg2);
+      border: 1.5px solid var(--border);
+      border-left: 4px solid var(--blue);
+      border-radius: var(--r);
+      padding: 12px;
+      cursor: pointer;
+      transition: all .15s;
+      box-shadow: var(--shadow);
+    }
+
+    .hit-card:hover {
+      border-color: var(--blue2);
+      box-shadow: var(--shadow-md);
+    }
+
+    .hit-card-name {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--t1);
+      margin-bottom: 3px;
+    }
+
+    .hit-kw {
+      font-size: 11px;
+      color: var(--blue);
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .doc-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--bg3);
+      border-radius: 6px;
+      padding: 7px 10px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background .1s;
+      border: 1px solid var(--border);
+      margin-top: 4px;
+    }
+
+    .doc-row:hover {
+      background: var(--blue-bg);
+      border-color: var(--blue2);
+    }
+
+    .no-hits {
+      color: var(--t3);
+      font-size: 13px;
+      text-align: center;
+      padding: 32px 0;
+      line-height: 2;
+    }
+
+    /* ─── Checklist ─── */
+    .check-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: var(--r);
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      margin-bottom: 6px;
+      transition: background .1s;
+    }
+
+    .check-item:hover {
+      background: var(--bg3);
+    }
+
+    .check-item input[type=checkbox] {
+      width: 16px;
+      height: 16px;
+      margin-top: 2px;
+      cursor: pointer;
+      accent-color: var(--blue);
+      flex-shrink: 0;
+    }
+
+    .check-item label {
+      flex: 1;
+      font-size: 13px;
+      color: var(--t1);
+      cursor: pointer;
+      line-height: 1.5;
+    }
+
+    .check-item .check-del {
+      color: var(--t3);
+      cursor: pointer;
+      font-size: 16px;
+      padding: 0 2px;
+      transition: color .1s;
+    }
+
+    .check-item .check-del:hover {
+      color: var(--red);
+    }
+
+    .check-item .check-edit {
+      color: var(--t3);
+      cursor: pointer;
+      font-size: 13px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      transition: all .1s;
+    }
+
+    .check-item .check-edit:hover {
+      color: var(--blue);
+      background: var(--blue-bg);
+    }
+
+    /* ─── Grant detail ─── */
+    .grant-hero {
+      background: var(--bg2);
+      border: 1.5px solid var(--border2);
+      border-radius: var(--rxl);
+      padding: 26px;
+      margin-bottom: 18px;
+      box-shadow: var(--shadow-md);
+    }
+
+    .grant-hero-name {
+      font-size: 22px;
+      font-weight: 900;
+      color: var(--t1);
+      margin-bottom: 8px;
+    }
+
+    .grant-hero-summary {
+      font-size: 15px;
+      color: var(--t2);
+      line-height: 1.7;
+      margin-bottom: 16px;
+    }
+
+    .meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .meta-item {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .meta-lbl {
+      font-size: 10px;
+      color: var(--t3);
+      font-weight: 800;
+      letter-spacing: .09em;
+    }
+
+    .meta-val {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--t1);
+    }
+
+    .flow-list {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .flow-item {
+      display: flex;
+      gap: 14px;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .flow-item:last-child {
+      border-bottom: none;
+    }
+
+    .flow-num {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: var(--blue-bg);
+      border: 2px solid var(--blue);
+      color: var(--blue);
+      font-size: 12px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .flow-body {
+      flex: 1;
+    }
+
+    .flow-title {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 3px;
+    }
+
+    .flow-note {
+      font-size: 12px;
+      color: var(--t2);
+      line-height: 1.6;
+    }
+
+    /* ─── Doc card ─── */
+    .doc-card {
+      background: var(--bg2);
+      border: 1.5px solid var(--border);
+      border-radius: var(--r);
+      padding: 14px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      transition: all .15s;
+      box-shadow: var(--shadow);
+    }
+
+    .doc-card:hover {
+      border-color: var(--blue2);
+      box-shadow: var(--shadow-md);
+    }
+
+    .doc-card-icon {
+      font-size: 22px;
+      flex-shrink: 0;
+      width: 28px;
+      text-align: center;
+    }
+
+    .doc-card-body {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .doc-card-name {
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 4px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--t1);
+    }
+
+    .doc-card-desc {
+      font-size: 12px;
+      color: var(--t3);
+      margin-top: 3px;
+    }
+
+    .doc-card-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 6px;
+    }
+
+    .doc-card-tag {
+      font-size: 10px;
+      background: var(--blue-bg);
+      color: var(--blue);
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-weight: 700;
+    }
+
+    .doc-card-actions {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+      align-items: flex-start;
+    }
+
+    /* ─── Board ─── */
+    .board-post {
+      background: var(--bg2);
+      border: 1.5px solid var(--border);
+      border-radius: var(--rl);
+      padding: 16px;
+      margin-bottom: 10px;
+      box-shadow: var(--shadow);
+    }
+
+    .board-post-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 10px;
+    }
+
+    .board-post-meta {
+      font-size: 11px;
+      color: var(--t3);
+    }
+
+    .board-post-author {
+      font-weight: 700;
+      color: var(--blue);
+    }
+
+    .board-post-body {
+      font-size: 14px;
+      line-height: 1.8;
+      color: var(--t1);
+      white-space: pre-wrap;
+    }
+
+    .board-unread {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--red);
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+
+    /* ─── Calendar ─── */
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 2px;
+    }
+
+    .cal-head {
+      text-align: center;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 8px 0;
+      color: var(--t3);
+    }
+
+    .cal-day {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px;
+      min-height: 80px;
+      cursor: pointer;
+      transition: all .1s;
+      position: relative;
+    }
+
+    .cal-day:hover {
+      background: var(--blue-bg);
+      border-color: var(--blue2);
+    }
+
+    .cal-day.today {
+      border-color: var(--blue);
+      background: var(--blue-bg2);
+    }
+
+    .cal-day.other-month {
+      opacity: .4;
+    }
+
+    .cal-day-num {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--t2);
+      margin-bottom: 4px;
+    }
+
+    .cal-day.today .cal-day-num {
+      color: var(--blue);
+    }
+
+    .cal-event {
+      font-size: 10px;
+      background: var(--blue);
+      color: #fff;
+      border-radius: 4px;
+      padding: 2px 5px;
+      margin-bottom: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      cursor: pointer;
+    }
+
+    .cal-event.green {
+      background: var(--green);
+    }
+
+    .cal-event.amber {
+      background: var(--amber);
+    }
+
+    .cal-nav {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .cal-nav-title {
+      font-size: 16px;
+      font-weight: 800;
+      flex: 1;
+      color: var(--t1);
+    }
+
+    .cal-members {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    .cal-member-btn {
+      padding: 5px 12px;
+      border-radius: 20px;
+      border: 1.5px solid var(--border2);
+      background: var(--bg2);
+      font-size: 12px;
+      cursor: pointer;
+      font-weight: 600;
+      color: var(--t2);
+      transition: all .13s;
+    }
+
+    .cal-member-btn.on {
+      background: var(--blue);
+      border-color: var(--blue);
+      color: #fff;
+    }
+
+    /* ─── Message ─── */
+    .msg-compose {
+      background: var(--bg2);
+      border: 1.5px solid var(--border2);
+      border-radius: var(--rxl);
+      padding: 24px;
+      box-shadow: var(--shadow-md);
+    }
+
+    /* ─── Modal ─── */
+    .modal-bg {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(26, 35, 64, .45);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(2px);
+    }
+
+    .modal-bg.on {
+      display: flex;
+    }
+
+    .modal {
+      background: var(--bg2);
+      border: 1.5px solid var(--border2);
+      border-radius: var(--rxl);
+      padding: 26px;
+      width: 560px;
+      max-width: 96vw;
+      max-height: 92vh;
+      overflow-y: auto;
+      box-shadow: var(--shadow-md);
+    }
+
+    .modal-lg {
+      width: 740px;
+    }
+
+    .modal-title {
+      font-size: 16px;
+      font-weight: 800;
+      margin-bottom: 18px;
+      color: var(--t1);
+    }
+
+    /* ─── Toast ─── */
+    .toast {
+      position: fixed;
+      bottom: 22px;
+      left: 50%;
+      transform: translateX(-50%) translateY(60px);
+      background: var(--bg2);
+      border: 1.5px solid var(--border2);
+      border-radius: var(--r);
+      padding: 11px 22px;
+      font-size: 13px;
+      font-weight: 600;
+      opacity: 0;
+      transition: all .28s;
+      z-index: 500;
+      pointer-events: none;
+      white-space: nowrap;
+      box-shadow: var(--shadow-md);
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .toast.ok {
+      border-color: var(--green);
+      color: var(--green);
+    }
+
+    .toast.ng {
+      border-color: var(--red);
+      color: var(--red);
+    }
+
+    /* ─── Memo prev ─── */
+    .memo-prev {
+      font-size: 12px;
+      color: var(--t2);
+      max-width: 260px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+
+    /* テロップが右から左へ流れるアニメーション */
+    @keyframes marquee {
+      0% {
+        transform: translateX(0);
+      }
+
+      100% {
+        transform: translateX(-100%);
+      }
+    }
+
+    /* メインコンテンツがテロップに被らないよう少し下げる（テロップ表示中のみ） */
+    body {
+      padding-top: 0px;
+      /* デフォルト */
+      transition: padding-top 0.3s;
+    }
+  </style>
+</head>
+
+<body>
+
+
+
+
+  <div id="login-screen"
+    style="position:fixed; inset:0; background:var(--bg0); z-index:20000; display:flex; align-items:center; justify-content:center;">
+    <div class="card" style="width:360px; padding:30px; text-align:center; box-shadow:var(--shadow-md);">
+      <div class="logo-title" style="font-size:24px; margin-bottom:10px;">助成金ナビ</div>
+      <div class="logo-sub" style="margin-bottom:30px;">ログインしてシステムを開始</div>
+      <div class="form-group" style="text-align:left;">
+        <div class="form-label">メールアドレス</div>
+        <input type="email" id="login-email" class="finp" placeholder="example@mail.com">
+      </div>
+      <div class="form-group" style="text-align:left;">
+        <div class="form-label">パスワード</div>
+        <input type="password" id="login-password" class="finp" placeholder="••••••••">
+      </div>
+      <button type="button" id="login-exec" class="btn btn-primary" style="width:100%; height:45px;">
+  ログイン
+</button>
+      <div id="login-error" style="color:var(--red); font-size:12px; margin-top:12px; display:none;"></div>
+    </div>
+  </div>
+
+
+
+  <div id="notif-bar"
+    style="display:none; position:fixed; top:20px; left:50%; transform:translateX(-50%); width:33%; min-width:300px; height:auto; background: linear-gradient(135deg, #1e3c72, #2a5298); color:white; z-index:10000; overflow:hidden; border-radius:30px; box-shadow: 0 15px 35px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15); backdrop-filter: blur(8px); flex-direction: column; justify-content: center; padding: 8px 20px; border-bottom: 3px solid #00d2ff;">
+    <div style="font-size: 9px; opacity: 0.7; text-align: center; letter-spacing: 0.2em; margin-bottom: 2px;">OFFICIAL
+      ANNOUNCEMENT</div>
+    <div id="notif-container"
+      style="width:100%; overflow:hidden; position:relative; height:22px; display:flex; align-items:center;">
+      <div id="notif-text"
+        style="white-space:nowrap; position:absolute; font-size:14px; font-weight:bold; text-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SIDEBAR ═══ -->
+
+
+  <nav class="sidebar">
+    <div class="logo">
+      <div class="logo-title">助成金ナビ</div>
+      <div class="logo-sub">GRANT NAVIGATION SYSTEM</div>
+    </div>
+    <div class="nav-item on" data-sc="home">
+      <div class="nav-dot" style="background:var(--blue)"></div>🏠 ホーム
+    </div>
+    <div class="nav-sec">面談</div>
+    <div class="nav-item" data-sc="hearing">
+      <div class="nav-dot" style="background:var(--green)"></div>🎙 ヒアリング
+    </div>
+    <div class="nav-item" data-sc="memo-history">
+      <div class="nav-dot" style="background:var(--teal)"></div>📋 面談・メモ履歴
+    </div>
+    <div class="nav-sec">助成金・資料</div>
+    <div class="nav-item" data-sc="grants">
+      <div class="nav-dot" style="background:var(--amber)"></div>💰 助成金一覧
+    </div>
+    <div class="nav-item" data-sc="docs">
+      <div class="nav-dot" style="background:var(--purple)"></div>📁 資料ライブラリ
+    </div>
+    <div class="nav-sec">コミュニケーション</div>
+    <div class="nav-item" data-sc="board" style="justify-content:space-between;">
+      <div style="display:flex;align-items:center;gap:9px;"><div class="nav-dot" style="background:var(--red)"></div>📣 掲示板</div>
+      <span id="board-badge" style="display:none;background:var(--red);color:#fff;border-radius:20px;font-size:10px;font-weight:800;padding:1px 7px;min-width:18px;text-align:center;"></span>
+    </div>
+    <div class="nav-item" data-sc="calendar">
+      <div class="nav-dot" style="background:var(--teal)"></div>📅 カレンダー
+    </div>
+    <div class="nav-item" data-sc="message">
+      <div class="nav-dot" style="background:var(--blue)"></div>✉️ メッセージ
+    </div>
+    <div class="nav-sec">設定</div>
+    <div class="nav-item" data-sc="admin">
+      <div class="nav-dot" style="background:var(--t3)"></div>👥 従業員管理
+    </div>
+    <div class="nav-item" data-sc="password">
+      <div class="nav-dot" style="background:var(--blue)"></div>🔑 パスワード変更
+    </div>
+    <div class="sb-footer">
+      <div id="sb-user" style="font-weight:700;font-size:12px;color:var(--t2);">ゲスト</div>
+      <div class="sb-ver">v2.0.0</div>
+    </div>
+
+    
+    
+  </nav>
+
+  <!-- ═══ MAIN ═══ -->
+  <div class="main">
+    <div class="topbar">
+      <span class="topbar-title" id="page-title">ホーム</span>
+      <button class="btn btn-sm" style="margin-right:6px;" onclick="newHearing()">🆕 新規ヒアリング</button>
+      <button class="btn btn-sm btn-primary" onclick="navTo('hearing')">＋ ヒアリング開始</button>
+    </div>
+    <div class="content">
+
+      <!-- ══ HOME ══ -->
+      <div id="s-home" class="screen on">
+        <!-- 検索 -->
+        <div class="mb18" style="max-width:640px;">
+          <div class="search-bar">
+            <input id="home-search" placeholder="資料名・助成金名・キーワードで検索…　例：男性育休、正社員化、IT導入"
+              oninput="doHomeSearch(this.value)">
+          </div>
+          <div class="search-drop" id="home-search-drop"></div>
+        </div>
+        <!-- KPI -->
+        <div class="g4 mb18">
+          <div class="kpi">
+            <div class="kpi-num" id="h-grants">—</div>
+            <div class="kpi-label">助成金数</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-num" id="h-docs">—</div>
+            <div class="kpi-label">資料数</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-num" id="h-kw">—</div>
+            <div class="kpi-label">キーワード数</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-num" id="h-memos">—</div>
+            <div class="kpi-label">面談メモ数</div>
+          </div>
+        </div>
+        <!-- 全キーワード -->
+        <div class="card mb18 card-sm" style="cursor:pointer;" onclick="toggleAllKw()">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div style="font-size:12px;font-weight:800;color:var(--t3);letter-spacing:.07em;">全キーワード一覧</div>
+            <span id="kw-toggle-icon" style="color:var(--t3);font-size:12px;">▼ 展開</span>
+          </div>
+          <div id="all-kw-list" style="display:none;margin-top:12px;"></div>
+        </div>
+        <!-- よく使う助成金 -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <div style="font-size:12px;font-weight:800;color:var(--t3);letter-spacing:.07em;">★ よく使う助成金</div>
+        </div>
+        <div id="home-grants" class="g3 mb18"></div>
+        <!-- 最近の資料 -->
+        <div style="font-size:12px;font-weight:800;color:var(--t3);letter-spacing:.07em;margin-bottom:10px;">
+          最近追加した資料（5件）</div>
+        <div id="home-docs" class="mb12"></div>
+      </div>
+
+      <!-- ══ HEARING ══ -->
+      <div id="s-hearing" class="screen">
+        <!-- 企業情報 -->
+        <div class="card mb12 card-sm">
+          <div class="g2">
+            <div class="form-group" style="margin-bottom:0;">
+              <div class="form-label">企業名<span class="req">*</span></div><input class="finp" id="hv-company"
+                placeholder="株式会社〇〇">
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+              <div class="form-label">担当者名</div><input class="finp" id="hv-contact" placeholder="山田 太郎">
+            </div>
+          </div>
+        </div>
+        <div class="hearing-wrap">
+          <!-- Left -->
+          <div class="hearing-col">
+            <!-- チェックリスト -->
+            <div class="card card-sm">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                <div style="font-size:13px;font-weight:800;">ヒアリングチェックリスト</div>
+                <button class="btn btn-xs btn-primary" onclick="openCheckAddModal()">＋ 追加</button>
+              </div>
+              <div id="check-list"></div>
+            </div>
+            <!-- メモ -->
+            <div class="memo-box">
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <div style="font-size:13px;font-weight:800;">ヒアリングメモ</div>
+                <div style="display:flex;gap:6px;">
+                  <button class="btn btn-sm" onclick="exportMemoPDF()">📄 PDF出力</button>
+                  <button class="btn btn-sm btn-primary" onclick="window.saveMemo()">💾 保存</button>
+                </div>
+              </div>
+              <div style="font-size:11px;color:var(--t3);">キーワードを入力すると右側に助成金・資料が自動表示されます</div>
+              <textarea class="memo-ta" id="memo-text"
+                placeholder="例）&#10;・従業員15名、製造業&#10;・正社員を採用予定&#10;・男性育休を推進したい&#10;・ITシステムを導入したい"
+                oninput="onMemoInput()"></textarea>
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div style="font-size:11px;color:var(--t3);" id="memo-char">0文字</div>
+                <button class="btn btn-xs"
+                  onclick="document.getElementById('memo-text').value='';onMemoInput();">クリア</button>
+              </div>
+            </div>
+            <!-- 過去メモ読み込み -->
+            <div class="card card-sm">
+              <div style="font-size:12px;font-weight:700;color:var(--t2);margin-bottom:8px;">過去の面談メモを読み込む</div>
+              <div style="display:flex;gap:8px;">
+                <select class="fsel" id="past-memo-sel" style="flex:1;font-size:12px;"></select>
+                <button class="btn btn-sm" onclick="loadPastMemo()">読み込む</button>
+              </div>
+            </div>
+            <!-- カレンダーへ -->
+            <div class="card card-sm" style="background:var(--blue-bg);border-color:var(--blue2);">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <span style="font-size:20px;">📅</span>
+                <div style="flex:1;">
+                  <div style="font-size:13px;font-weight:700;color:var(--blue);">日程調整・次回面談を設定</div>
+                  <div style="font-size:11px;color:var(--t3);">Googleカレンダーで予定を管理</div>
+                </div>
+                <button class="btn btn-sm btn-primary" onclick="navTo('calendar')">カレンダーへ</button>
+              </div>
+            </div>
+          </div>
+          <!-- Right: キーワード提案（固定） -->
+          <div class="hearing-col sticky-col">
+            <div style="font-size:12px;font-weight:800;color:var(--t3);letter-spacing:.06em;">🔍 キーワード自動提案</div>
+            <div id="keyword-hits">
+              <div class="no-hits">メモを書くと<br>関連する助成金と資料が<br>自動で表示されます</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ MEMO HISTORY ══ -->
+      <div id="s-memo-history" class="screen">
+        <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+          <div class="search-bar" style="flex:1;max-width:340px;"><input id="mh-search" placeholder="企業名・担当者名で検索…"
+              oninput="filterMemos()"></div>
+        </div>
+        <div class="card" style="padding:0;">
+          <div class="tbl-wrap">
+            <table class="tbl">
+              <thead>
+                <tr>
+                  <th>日付</th>
+                  <th>企業名</th>
+                  <th>担当者</th>
+                  <th>メモ（一部）</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="memo-list"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ GRANTS ══ -->
+      <div id="s-grants" class="screen">
+        <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center;">
+          <div class="search-bar" style="flex:1;max-width:440px;"><input id="grant-search" placeholder="助成金名・キーワードで検索…" oninput="filterGrants()"></div>
+          <button class="btn btn-sm btn-primary" onclick="openGrantEditModal()">＋ 助成金追加</button>
+        </div>
+        <div id="grant-list"></div>
+      </div>
+
+      <!-- ══ GRANT DETAIL ══ -->
+      <div id="s-grant-detail" class="screen">
+        <button class="btn btn-sm mb18" onclick="navTo('grants')">← 一覧に戻る</button>
+        <div id="grant-detail-body"></div>
+      </div>
+
+      <!-- ══ DOCS ══ -->
+      <div id="s-docs" class="screen">
+        <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center;">
+          <div class="search-bar" style="flex:1;max-width:440px;"><input id="doc-search" placeholder="資料名・キーワードで検索…" oninput="filterDocs()"></div>
+          <button class="btn btn-sm btn-primary" onclick="openDocModal()">＋ 資料を追加</button>
+        </div>
+        <div id="doc-list"></div>
+      </div>
+
+      <!-- ══ BOARD ══ -->
+      <div id="s-board" class="screen">
+        <!-- 未読通知バナー（確認ボタンまで表示） -->
+        <div id="board-unread-banner" style="display:none;background:var(--red-bg);border:1.5px solid var(--red);border-radius:var(--rl);padding:14px 18px;margin-bottom:16px;">
+          <div style="display:flex;align-items:flex-start;gap:10px;">
+            <span style="font-size:20px;flex-shrink:0;">🔔</span>
+            <div style="flex:1;">
+              <div style="font-size:13px;font-weight:800;color:var(--red);margin-bottom:6px;">未読のお知らせがあります</div>
+              <div id="board-unread-items"></div>
+            </div>
+            <button class="btn btn-xs btn-danger" onclick="clearAllUnread()">すべて確認済みにする</button>
+          </div>
+        </div>
+        <div class="card mb18">
+          <div style="font-size:14px;font-weight:800;margin-bottom:12px;">📣 お知らせを投稿</div>
+          <div class="form-group">
+            <div class="form-label">タイトル<span class="req">*</span></div><input class="finp" id="board-title" placeholder="例：キャリアアップ助成金の改定について">
+          </div>
+          <div class="form-group">
+            <div class="form-label">内容<span class="req">*</span></div><textarea class="ftxt" id="board-body" placeholder="全員に共有したい内容を入力してください…" style="min-height:100px;"></textarea>
+          </div>
+          <div class="btn-row" style="margin-top:10px;">
+            <button class="btn btn-primary" onclick="postBoard()">📤 投稿・通知する</button>
+          </div>
+        </div>
+        <div style="font-size:12px;font-weight:800;color:var(--t3);letter-spacing:.07em;margin-bottom:12px;">📋 投稿履歴</div>
+        <div id="board-list"></div>
+      </div>
+
+      <!-- ══ CALENDAR ══ -->
+      <div id="s-calendar" class="screen">
+        <div class="card mb14 card-sm" style="background:var(--amber-bg);border-color:var(--amber);">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:18px;">📅</span>
+            <div>
+              <div style="font-size:13px;font-weight:700;color:var(--amber);">Googleカレンダー連携</div>
+
+              <div style="font-size:12px;color:var(--t2);">下の「Googleカレンダーで開く」からアクセスできます。予定追加後に自動同期されます。</div>
+            </div>
+            <a href="https://calendar.google.com" target="_blank" class="btn btn-sm"
+              style="flex-shrink:0;text-decoration:none;">Googleカレンダーで開く 🔗</a>
+          </div>
+        </div>
+        <!-- メンバーフィルター -->
+        <div style="font-size:12px;font-weight:700;color:var(--t2);margin-bottom:8px;">メンバーのカレンダーを表示</div>
+        <div class="cal-members" id="cal-members"></div>
+        <!-- 月ナビ -->
+        <div class="cal-nav">
+          <button class="btn btn-sm" onclick="calPrev()">◀</button>
+          <div class="cal-nav-title" id="cal-title"></div>
+          <button class="btn btn-sm" onclick="calNext()">▶</button>
+          <button class="btn btn-sm btn-primary" onclick="openCalEventModal()">＋ 予定追加</button>
+        </div>
+        <!-- カレンダーグリッド -->
+        <div class="cal-grid" id="cal-head"></div>
+        <div class="cal-grid" id="cal-grid" style="margin-top:2px;"></div>
+      </div>
+
+      <!-- ══ MESSAGE ══ -->
+      <div id="s-message" class="screen">
+        <!-- 未送信バナー -->
+        <div id="msg-unsent-banner" style="display:none;background:var(--amber-bg);border:1.5px solid var(--amber);border-radius:var(--rl);padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:10px;">
+          <span style="font-size:18px;">📬</span>
+          <div style="flex:1;font-size:13px;color:var(--amber);font-weight:700;" id="msg-unsent-text"></div>
+          <button class="btn btn-xs" onclick="navTo('message')">確認する</button>
+        </div>
+        <div class="g2" style="gap:18px;">
+          <!-- 作成 -->
+          <div class="msg-compose">
+            <div style="font-size:15px;font-weight:800;margin-bottom:16px;">✉️ メール作成・送信</div>
+            <input type="hidden" id="msg-edit-id">
+            <div class="form-group"><div class="form-label">宛先<span class="req">*</span></div>
+              <select class="fsel" id="msg-to-sel" onchange="onMsgToSel(this)"><option value="">メンバーから選択...</option></select>
+              <input class="finp" id="msg-to" placeholder="または直接メールアドレスを入力" type="email" style="margin-top:6px;">
+            </div>
+            <div class="form-group"><div class="form-label">件名<span class="req">*</span></div><input class="finp" id="msg-subject" placeholder="件名を入力"></div>
+            <div class="form-group"><div class="form-label">本文<span class="req">*</span></div><textarea class="ftxt" id="msg-body" placeholder="本文を入力…" style="min-height:140px;"></textarea></div>
+            <div class="form-group">
+              <div class="form-label">資料を添付（システム内の資料から選択）</div>
+              <div id="msg-doc-sel" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;min-height:28px;"></div>
+              <select class="fsel" id="msg-doc-picker" onchange="addMsgDoc(this)" style="width:auto;max-width:400px;"><option value="">＋ 資料を選択して添付...</option></select>
+            </div>
+            <div style="font-size:11px;color:var(--t3);background:var(--blue-bg);padding:8px 12px;border-radius:var(--r);margin-bottom:12px;">
+              💡 「送信」を押すと送信履歴に保存され、宛先のメールアドレスへ自動送信されます（EmailJS設定後）
+            </div>
+            <div class="btn-row" style="margin-top:8px;">
+              <button class="btn" onclick="clearMsg()">クリア</button>
+              <button class="btn btn-primary" onclick="sendMsg()">📤 送信する</button>
+            </div>
+          </div>
+          <!-- 送信履歴 -->
+          <div>
+            <div style="font-size:14px;font-weight:800;margin-bottom:12px;">📋 送信履歴</div>
+            <div id="msg-history-list"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ ADMIN ══ -->
+      <div id="s-admin" class="screen">
+        <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;align-items:center;">
+          <div style="font-size:16px;font-weight:900;">👥 従業員管理</div>
+        </div>
+        <!-- 従業員追加フォーム -->
+        <div class="card mb18">
+          <div style="font-size:14px;font-weight:800;margin-bottom:14px;">＋ 新規従業員を追加</div>
+          <div class="g2" style="gap:12px;">
+            <div class="form-group" style="margin-bottom:0;"><div class="form-label">名前<span class="req">*</span></div><input class="finp" id="adm-member-name" placeholder="田中 花子"></div>
+            <div class="form-group" style="margin-bottom:0;"><div class="form-label">メールアドレス</div><input class="finp" id="adm-member-email" placeholder="tanaka@company.jp"></div>
+          </div>
+          <div class="form-group" style="margin-top:10px;margin-bottom:0;"><div class="form-label">初期パスワード</div><input class="finp" type="password" id="adm-member-pass" placeholder="8文字以上"></div>
+          <div class="btn-row" style="margin-top:12px;"><button class="btn btn-primary" onclick="addMember()">＋ 追加</button></div>
+        </div>
+        <!-- 従業員一覧 -->
+        <div class="card" style="padding:0;">
+          <table class="tbl">
+            <thead><tr><th>名前</th><th>メールアドレス</th><th>操作</th></tr></thead>
+            <tbody id="admin-members"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ══ PASSWORD ══ -->
+      <div id="s-password" class="screen">
+  <div class="card" style="max-width:440px;">
+    <div style="font-size:15px;font-weight:800;margin-bottom:18px;">🔑 パスワード変更</div>
+    
+    <div class="form-group">
+      <div class="form-label form-group-name">名前:<input class="finp" id="pw-display-name" readonly style="background:var(--bg4); border:none; font-weight:bold;"></div>
+      
+    </div>
+    <div class="form-group">
+      <div class="form-label">メールアドレス</div>
+      <input class="finp" id="pw-display-email" readonly style="background:var(--bg4); border:none; color:var(--t3);">
+    </div>
+    
+    <div class="divider"></div>
+
+    <div class="form-group"><div class="form-label">現在のパスワード<span class="req">*</span></div><input class="finp" type="password" id="pw-current" placeholder="現在のパスワード"></div>
+    <div class="form-group"><div class="form-label">新しいパスワード<span class="req">*</span>（8文字以上）</div><input class="finp" type="password" id="pw-new" placeholder="新しいパスワード"></div>
+    <div class="form-group"><div class="form-label">確認（再入力）</div><input class="finp" type="password" id="pw-confirm" placeholder="同じパスワードを再入力"></div>
+    <div id="pw-err" style="font-size:12px;color:var(--red);margin-bottom:8px;display:none;"></div>
+    <button class="btn btn-primary" onclick="changePassword()">変更する</button>
+  </div>
+</div>
+
+    </div><!-- .content -->
+  </div><!-- .main -->
+
+  <!-- ════ MODALS ════ -->
+
+  <!-- 資料追加/編集 -->
+  <div class="modal-bg" id="doc-modal">
+    <div class="modal modal-lg">
+      <div class="modal-title" id="dm-title">📁 資料を追加</div>
+      <input type="hidden" id="dm-id">
+      <div>
+        <div class="form-group">
+          <div class="form-label">資料名<span class="req">*</span></div><input class="finp" id="dm-name"
+            placeholder="キャリアアップ助成金 申請マニュアル">
+        </div>
+        
+      </div>
+      <div class="form-group">
+        <div class="form-label">関連助成金</div><select class="fsel" id="dm-grant">
+          <option value="">なし（汎用資料）</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <div class="form-label">種別</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;" id="dm-type-btns">
+          <div class="btn btn-sm on" onclick="selDocType(this,'url')">🔗 URL</div>
+          <div class="btn btn-sm" onclick="selDocType(this,'pdf')">📄 PDF</div>
+          <div class="btn btn-sm" onclick="selDocType(this,'word')">📝 Word</div>
+          <div class="btn btn-sm" onclick="selDocType(this,'excel')">📊 Excel</div>
+          <div class="btn btn-sm" onclick="selDocType(this,'other')">📁 その他</div>
+        </div>
+        <input type="hidden" id="dm-type" value="url">
+      </div>
+      <div id="dm-url-grp" class="form-group">
+        <div class="form-label">URL</div><input class="finp" id="dm-url" placeholder="https://...">
+      </div>
+      <div id="dm-file-grp" class="form-group" style="display:none;">
+        <div class="form-label">ファイル名 / パス</div><input class="finp" id="dm-filename" placeholder="ファイル名を入力">
+        <div style="font-size:11px;color:var(--t3);margin-top:4px;">※ Supabase Storage設定後はファイルアップロードが可能になります</div>
+      </div>
+      <div class="form-group">
+        <div class="form-label">説明</div><textarea class="ftxt" id="dm-desc" placeholder="この資料の内容・用途"
+          style="min-height:60px;"></textarea>
+      </div>
+      <div class="form-group">
+        <div class="form-label">キーワード（複数設定可 — ヒアリング時に自動提案）</div>
+        <div style="display:flex;gap:8px;margin-bottom:8px;"><input class="finp" id="dm-kw-inp" placeholder="例：男性育休"
+            style="flex:1;" onkeydown="if(event.key==='Enter'){addDmKw();event.preventDefault();}"><button
+            class="btn btn-sm" onclick="addDmKw()">追加</button></div>
+        <div class="tags-wrap" id="dm-kw-tags"></div>
+      </div>
+      <div class="btn-row"><button class="btn" onclick="closeModal('doc-modal')">キャンセル</button><button
+          class="btn btn-primary" onclick="saveDoc()">保存</button></div>
+    </div>
+  </div>
+
+  <!-- 助成金追加/編集 -->
+  <div class="modal-bg" id="grant-modal">
+    <div class="modal modal-lg">
+  <div class="modal-title" id="gm-title">💰 助成金コースを追加</div>
+  <input type="hidden" id="gm-id">
+  
+  <div class="form-group">
+    <div class="form-label">助成金名<span class="req">*</span></div>
+    <input class="finp" id="gm-name" placeholder="キャリアアップ助成金（正社員化コース）">
+  </div>
+
+  <div class="form-group">
+    <div class="form-label">一言で言うと</div>
+    <input class="finp" id="gm-summary" placeholder="有期雇用から正社員へ転換した際に支給される助成金">
+  </div>
+      <div class="g2">
+        <div class="form-group">
+          <div class="form-label">助成金額（上限）</div><input class="finp" id="gm-amount" placeholder="最大80万円/人">
+        </div>
+        <div class="form-group">
+          <div class="form-label">手数料</div><input class="finp" id="gm-fee" placeholder="助成金額の20%">
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="form-label">申請期間・タイミング</div><input class="finp" id="gm-period"
+          placeholder="例：転換後6ヶ月後に申請、期限は転換後2年以内">
+      </div>
+      <div class="form-group">
+        <div class="form-label">詳細説明</div><textarea class="ftxt" id="gm-desc" placeholder="制度の詳細、対象者、条件など"></textarea>
+      </div>
+      <div class="form-group">
+        <div class="form-label">申請の流れ（1ステップごとに改行）</div><textarea class="ftxt" id="gm-flow"
+          placeholder="就業規則の整備&#10;転換対象者を選定&#10;正社員として転換&#10;6ヶ月分の賃金支払い&#10;申請書を労働局に提出" style="min-height:180px;font-size:14px;line-height:2;"></textarea>
+      </div>
+      <div class="form-group">
+        <div class="form-label">注意事項・備考</div><textarea class="ftxt" id="gm-note" placeholder="申請時の注意点、よくある失敗など…"
+          style="min-height:60px;"></textarea>
+      </div>
+      <div class="form-group">
+        <div class="form-label">キーワード（複数設定可）</div>
+        <div style="display:flex;gap:8px;margin-bottom:8px;"><input class="finp" id="gm-kw-inp"
+            placeholder="例：正社員化、パート転換" style="flex:1;"
+            onkeydown="if(event.key==='Enter'){addGmKw();event.preventDefault();}"><button class="btn btn-sm"
+            onclick="addGmKw()">追加</button></div>
+        <div class="tags-wrap" id="gm-kw-tags"></div>
+      </div>
+      <div class="form-group">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+          <input type="checkbox" id="gm-featured" style="width:16px;height:16px;accent-color:var(--blue);">
+          <span style="font-size:13px;color:var(--t2);font-weight:600;">★ よく使う助成金としてホームに表示</span>
+        </label>
+      </div>
+      <div class="btn-row"><button class="btn" onclick="closeModal('grant-modal')">キャンセル</button><button
+          class="btn btn-primary" onclick="saveGrant()">保存</button></div>
+    </div>
+  </div>
+
+
+<div class="modal-bg" id="modal-edit-member">
+  <div class="modal">
+    <div class="modal-title">👥 従業員情報を編集</div>
+    <input type="hidden" id="edit-member-id">
+    
+    <div class="form-group">
+      <div class="form-label">名前</div>
+      <input class="finp" id="edit-member-name" placeholder="名前を入力">
+    </div>
+    
+    <div class="form-group">
+      <div class="form-label">メールアドレス</div>
+      <input class="finp" id="edit-member-email" readonly style="background:var(--bg4); color:var(--t3);">
+      <div style="font-size:10px; color:var(--t3); margin-top:4px;">※メールアドレスは変更できません</div>
+    </div>
+    
+    <div class="form-group">
+      <div class="form-label">新しいパスワード（変更する場合のみ入力）</div>
+      <input class="finp" type="password" id="edit-member-pass" placeholder="8文字以上">
+    </div>
+
+    <div class="btn-row">
+      <button class="btn" onclick="closeModal('modal-edit-member')">キャンセル</button>
+      <button class="btn btn-primary" onclick="updateMember()">更新保存</button>
+    </div>
+  </div>
+</div>
+
+  <!-- チェック項目追加 -->
+  <div class="modal-bg" id="check-add-modal">
+    <div class="modal">
+      <div class="modal-title">ヒアリング項目を追加</div>
+      <input type="hidden" id="cam-id">
+      <div class="form-group">
+        <div class="form-label">質問・確認項目<span class="req">*</span></div><textarea class="ftxt" id="cam-text"
+          placeholder="例：従業員のうち有期雇用者は何名いますか？" style="min-height:80px;"></textarea>
+      </div>
+      <div class="btn-row"><button class="btn" onclick="closeModal('check-add-modal')">キャンセル</button><button
+          class="btn btn-primary" onclick="saveCheckItem()">保存</button></div>
+    </div>
+  </div>
+
+  <!-- メモ詳細/編集 -->
+  <div class="modal-bg" id="memo-modal">
+    <div class="modal modal-lg">
+      <div class="modal-title" id="mm-title">面談メモ</div>
+      <input type="hidden" id="mm-id">
+      <div class="g2 mb12">
+        <div class="form-group" style="margin-bottom:0;">
+          <div class="form-label">企業名</div><input class="finp" id="mm-company">
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <div class="form-label">担当者</div><input class="finp" id="mm-contact">
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="form-label">ヒアリングメモ</div><textarea class="ftxt" id="mm-text" style="min-height:200px;"></textarea>
+      </div>
+      <div class="btn-row">
+        <button class="btn" onclick="closeModal('memo-modal')">閉じる</button>
+        <button class="btn btn-sm" onclick="exportMemoModalPDF()">📄 PDF出力</button>
+        <button class="btn btn-primary" onclick="updateMemo()">更新</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- カレンダーイベント追加 -->
+  <div class="modal-bg" id="cal-event-modal">
+
+    <div class="modal">
+      <div class="modal-title" id="cal-modal-title">📅 予定を追加</div>
+
+      <input type="hidden" id="cev-id">
+      <div class="form-group">
+        <div class="form-label">タイトル<span class="req">*</span></div><input class="finp" id="cev-title"
+          placeholder="例：〇〇株式会社 面談">
+      </div>
+      <div class="g2">
+        <div class="form-group">
+          <div class="form-label">日付<span class="req">*</span></div><input class="finp" type="date" id="cev-date">
+        </div>
+        <div class="form-group">
+          <div class="form-label">時間</div><input class="finp" type="time" id="cev-time" value="10:00">
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="form-label">担当メンバー</div><select class="fsel" id="cev-member">
+          <option value="">なし</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <div class="form-label">メモ</div><textarea class="ftxt" id="cev-note" placeholder="予定の詳細"
+          style="min-height:60px;"></textarea>
+      </div>
+      <div class="form-group">
+        <div class="form-label" style="margin-bottom:8px;">カラー</div>
+        <div style="display:flex;gap:8px;">
+          <div onclick="selCalColor(this,'blue')"
+            style="width:24px;height:24px;border-radius:50%;background:var(--blue);cursor:pointer;border:3px solid var(--blue);">
+          </div>
+          <div onclick="selCalColor(this,'green')"
+            style="width:24px;height:24px;border-radius:50%;background:var(--green);cursor:pointer;"></div>
+          <div onclick="selCalColor(this,'amber')"
+            style="width:24px;height:24px;border-radius:50%;background:var(--amber);cursor:pointer;"></div>
+          <div onclick="selCalColor(this,'red')"
+            style="width:24px;height:24px;border-radius:50%;background:var(--red);cursor:pointer;"></div>
+        </div>
+        <input type="hidden" id="cev-color" value="blue">
+      </div>
+      <div
+        style="background:var(--blue-bg);border-radius:var(--r);padding:10px 12px;font-size:12px;color:var(--blue);margin-bottom:14px;">
+        💡 保存後、Googleカレンダーにも追加するボタンが表示されます
+      </div>
+      <div class="btn-row">
+        <button class="btn" onclick="closeModal('cal-event-modal')">キャンセル</button>
+        <button class="btn btn-danger btn-sm" id="cev-del-btn" onclick="deleteCalEvent()"
+          style="display:none;">削除</button>
+        <button class="btn btn-primary" onclick="saveCalEvent()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script type="module">
+
+    // ライブラリの読み込み
+import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai@0.12.0";
+
+// ここにご提示のキーを貼り付けました
+const GEMINI_API_KEY = "AIzaSyBw_7rxaeiginZmFFHh4zm8qPAfYShZ09M"; 
+const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+
+// これでAI(genAI)が使えるようになります
+
+
+
+async function runAiConsultant(text) {
+    const hitsEl = document.getElementById('keyword-hits');
+    if (!hitsEl) return;
+
+    // 現在の助成金リストを取得
+    const grantNames = window.GRANTS && window.GRANTS.length > 0 
+        ? window.GRANTS.map(g => g.name).join(', ')
+        : "キャリアアップ助成金, 両立支援助成金, IT導入補助金";
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+
+    const prompt = `助成金コンサルのプロとして回答してください。
+以下のメモを分析し、JSON形式 {"suggestions": [{"name": "助成金名", "reason": "理由"}], "missing": ["不足項目1", "不足項目2"]} で出力してください。
+1. 候補：${grantNames} から最適なものを最大2つ。
+2. 不足：申請要件を確認するために「次に聞くべきこと」を2つ。
+メモ：${text}`;
+
+    try {
+        const response = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+        });
+
+        const data = await response.json();
+        const rawText = data.candidates[0].content.parts[0].text;
+        const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+        
+        if (jsonMatch) {
+            const res = JSON.parse(jsonMatch[0]);
+            hitsEl.innerHTML = `
+                <div style="background:var(--blue-bg); padding:12px; border-radius:var(--r); margin-bottom:12px; border:1px solid var(--blue2);">
+                    <div style="font-weight:bold; color:var(--blue); font-size:12px; margin-bottom:8px;">💡 AIの推奨</div>
+                    ${res.suggestions.map(s => `
+                        <div style="margin-bottom:8px;">
+                            <div style="font-size:13px; font-weight:bold;">💰 ${s.name}</div>
+                            <div style="font-size:11px; color:var(--t2);">${s.reason}</div>
+                        </div>
+                    `).join('')}
+                </div>
+                <div style="background:var(--amber-bg); padding:12px; border-radius:var(--r); border:1px solid var(--amber);">
+                    <div style="font-weight:bold; color:var(--amber); font-size:12px; margin-bottom:8px;">🚩 不足している確認事項</div>
+                    <ul style="padding-left:18px; margin:0; font-size:12px; line-height:1.6;">
+                        ${res.missing.map(m => `<li>${m}</li>`).join('')}
+                    </ul>
+                </div>
+            `;
+        }
+    } catch (e) {
+        console.error("AI提案エラー:", e);
+    }
+}
+
+
+    // ════════════════════════════════════════
+// SUPABASE 接続設定
+// ════════════════════════════════════════
+var SB_URL = 'https://tjerqvhgvvyhhofoleen.supabase.co';
+var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRqZXJxdmhndnZ5aGhvZm9sZWVuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1ODg2NDEsImV4cCI6MjA5MzE2NDY0MX0.t_4B1jGtYowMoVEEVcwjVaHdPqGXjXp5Z27MxrdKOKI';
+  var supabaseClient;
+
+  // 2. 初期化関数
+  function initSupabase() {
+    try {
+      if (typeof supabase !== 'undefined') {
+        supabaseClient = supabase.createClient(SB_URL, SB_KEY);
+        console.log("Supabase初期化完了");
+      } else {
+        console.error("Supabaseライブラリが読み込まれていません");
+      }
+    } catch (e) {
+      console.error("初期化失敗:", e);
+    }
+  }
+
+  // 3. ログイン処理
+  async function performLogin() {
+    var email = document.getElementById('login-email').value;
+    var password = document.getElementById('login-password').value;
+    var errorEl = document.getElementById('login-error');
+    var btn = document.getElementById('login-exec');
+
+    if (!email || !password) {
+      errorEl.textContent = "メールとパスワードを入力してください";
+      errorEl.style.display = 'block';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = "認証中...";
+
+    try {
+      var result = await supabaseClient.auth.signInWithPassword({
+        email: email,
+        password: password
+      });
+
+      if (result.error) {
+        errorEl.textContent = "ログイン失敗: " + result.error.message;
+        errorEl.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = "ログイン";
+      } else {
+        // 成功
+        document.getElementById('login-screen').style.display = 'none';
+        console.log("ログイン成功");
+        // ここでデータの読み込み処理（loadAllData等）を呼ぶ
+      }
+    } catch (err) {
+      console.error(err);
+      errorEl.textContent = "接続エラーが発生しました";
+      errorEl.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = "ログイン";
+    }
+  }
+
+
+
+
+
+
+
+  // 4. ページ読み込み時の処理
+  window.addEventListener('DOMContentLoaded', function() {
+    initSupabase();
+    
+    var loginBtn = document.getElementById('login-exec');
+    if (loginBtn) {
+      loginBtn.addEventListener('click', performLogin);
+    }
+  });
+
+    // ════════════════════════════════════════
+    // LOCAL STORAGE
+    // ════════════════════════════════════════
+    const LS = {
+      get: k => { try { return JSON.parse(localStorage.getItem('gn2_' + k) || 'null'); } catch { return null; } },
+      set: (k, v) => localStorage.setItem('gn2_' + k, JSON.stringify(v)),
+      arr: k => LS.get(k) || []
+    };
+
+    // ════════════════════════════════════════
+    // DEFAULT DATA
+    // ════════════════════════════════════════
+    function defaultGrants() {
+      return [
+        { id: 'g1', name: 'キャリアアップ助成金（正社員化コース）', summary: '有期雇用・パートを正社員に転換した際に支給される助成金', amount: '最大80万円/人', fee: '助成金額の20%', period: '転換後6ヶ月経過後に申請。転換日から2年以内', desc: '有期雇用労働者・パートタイマー等を正規雇用へ転換した事業主に支給。就業規則への転換規定記載が必須。', flow: '就業規則に転換規定を記載\n転換対象者を選定（有期雇用6ヶ月以上）\n正社員として転換・雇用\n転換後6ヶ月分の賃金支払い\n支給申請書を労働局に提出', note: '就業規則は必ず届出済みであること。転換前に申請不可。', keywords: ['正社員化', 'パート転換', '有期雇用', 'キャリアアップ', '正社員', '転換'], featured: true },
+        { id: 'g2', name: '両立支援等助成金（出生時両立支援コース）', summary: '男性の育児休業取得を推進した事業主に支給される助成金', amount: '最大57万円', fee: '助成金額の20%', period: '育休取得後に申請。開始前から環境整備が必要', desc: '男性労働者が育休を取得しやすい職場環境を整備し、実際に取得させた事業主への支援。', flow: '行動計画の策定・周知\n育休推進のための環境整備\n男性従業員が育休取得（連続14日以上等）\n育休終了後2ヶ月以内に申請', note: '育休開始前に申請手続きが必要。行動計画の作成・周知が条件。', keywords: ['男性育休', '育児休業', '出生時', '両立支援', 'パタニティ', '育休'], featured: true },
+        { id: 'g3', name: 'IT導入補助金（デジタル化基盤導入枠）', summary: '中小企業のITツール（会計・受発注・決済等）導入を支援する補助金', amount: '最大350万円', fee: '補助金額の15%', period: '公募期間内に申請。採択後にツール導入・実績報告', desc: 'IT導入支援事業者が提供するITツール導入費の補助。会計・受発注・決済・ECサイト等が対象。', flow: 'IT導入支援事業者を選定\n導入ITツールを決定\n公募期間内に交付申請\n採択後にツール導入・支払い\n実績報告・補助金受取', note: '公募期間・スケジュールに要注意。採択競争あり。', keywords: ['IT導入', 'デジタル化', 'システム', 'DX', 'クラウド', 'SaaS'], featured: true }
+      ];
+    }
+
+    function defaultChecklist() {
+      return [
+        { id: 'c1', text: '従業員数は何名ですか？（正社員・パート別）' },
+        { id: 'c2', text: '雇用形態の内訳を教えてください（有期・無期）' },
+        { id: 'c3', text: '直近1年以内に社会保険料の滞納はありますか？' },
+        { id: 'c4', text: '就業規則はありますか？（労基署届出済み？）' },
+        { id: 'c5', text: '直近・今後予定している採用・設備・研修の取り組みはありますか？' },
+        { id: 'c6', text: '助成金の申請経験はありますか？' }
+      ];
+    }
+
+    // ════════════════════════════════════════
+    // STATE
+    // ════════════════════════════════════════
+    let GRANTS = [], DOCS = [], MEMOS = [], CHECKS = [], MEMBERS = [], BOARD = [], CAL_EVENTS = [];
+    let docKwMap = {}, grantKwMap = {};
+    let currentGrantCat = 'all';
+    let dmKws = [], gmKws = [];
+    let calYear = new Date().getFullYear(), calMonth = new Date().getMonth();
+    let calSelMembers = new Set(['all']);
+    let msgDocs = [];
+
+    // ════════════════════════════════════════
+    // INIT
+    // ════════════════════════════════════════
+    window.onload = () => {
+      GRANTS = LS.arr('grants').length ? LS.arr('grants') : defaultGrants();
+      if (!LS.arr('grants').length) LS.set('grants', GRANTS);
+      DOCS = LS.arr('docs');
+      MEMOS = LS.arr('memos');
+      CHECKS = LS.arr('checks').length ? LS.arr('checks') : defaultChecklist();
+      if (!LS.arr('checks').length) LS.set('checks', CHECKS);
+      MEMBERS = LS.arr('members');
+      BOARD = LS.arr('board');
+      CAL_EVENTS = LS.arr('cal_events');
+      buildKwMaps();
+      loadHome();
+      renderChecklist();
+      renderCalendar();
+      updatePastMemoSel();
+      // ログイン時：未読バッジ更新
+      if (typeof updateBoardBadge === 'function') updateBoardBadge();
+      document.querySelectorAll('.nav-item[data-sc]').forEach(el => el.addEventListener('click', () => navTo(el.dataset.sc)));
+    };
+
+    // ════════════════════════════════════════
+    // KEYWORD MAPS
+    // ════════════════════════════════════════
+    function buildKwMaps() {
+      docKwMap = {};
+      DOCS.forEach(d => (d.keywords || []).forEach(kw => { const k = kw.toLowerCase(); if (!docKwMap[k]) docKwMap[k] = []; docKwMap[k].push(d.id); }));
+      grantKwMap = {};
+      GRANTS.forEach(g => (g.keywords || []).forEach(kw => { const k = kw.toLowerCase(); if (!grantKwMap[k]) grantKwMap[k] = []; grantKwMap[k].push(g.id); }));
+    }
+
+    // ════════════════════════════════════════
+    // NAVIGATION
+    // ════════════════════════════════════════
+
+    async function loadMyProfileForPasswordPage() {
+  try {
+    // 1. 現在ログインしているユーザーのIDを取得
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+    if (authError || !user) return;
+
+    // 2. profilesテーブルから名前とメールを取得
+    const { data: profile, error: dbError } = await supabaseClient
+      .from('profiles')
+      .select('display_name, email')
+      .eq('id', user.id)
+      .single();
+
+    if (dbError) throw dbError;
+
+    // 3. HTMLの入力欄にセット
+    document.getElementById('pw-display-name').value = profile.display_name || '未設定';
+    document.getElementById('pw-display-email').value = profile.email || user.email;
+
+  } catch (err) {
+    console.error("プロフィールの読み込みに失敗しました:", err);
+  }
+}
+
+
+
+    const PAGE_TITLES = { home: 'ホーム', hearing: 'ヒアリング', 'memo-history': '面談・メモ履歴', grants: '助成金一覧', 'grant-detail': '助成金詳細', docs: '資料ライブラリ', board: '掲示板', calendar: 'カレンダー', message: 'メッセージ', admin: '従業員管理', password: 'パスワード変更' };
+    
+    // ★ window. を付けてHTMLから呼べるようにする
+    window.navTo = function(id) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
+      document.querySelectorAll('.nav-item[data-sc]').forEach(n => n.classList.remove('on'));
+      document.getElementById('s-' + id)?.classList.add('on');
+      document.querySelector(`.nav-item[data-sc="${id}"]`)?.classList.add('on');
+      document.getElementById('page-title').textContent = PAGE_TITLES[id] || id;
+      if (id === 'home') loadHome();
+      if (id === 'memo-history') renderMemoList();
+      if (id === 'grants') renderGrants();
+      if (id === 'docs') renderDocs();
+      if (id === 'board') { renderBoard(); renderUnreadBanner(); }
+      if (id === 'calendar') renderCalendar();
+      if (id === 'message') loadMsgDocPicker();
+      if (id === 'admin') renderAdmin();
+      if (id === 'password') {
+        loadMyProfileForPasswordPage(); // 画面を切り替えた瞬間に情報を読み込む
+      }
+    };
+
+    // ════════════════════════════════════════
+    // HOME
+    // ════════════════════════════════════════
+    function loadHome() {
+  const allKws = new Set([...Object.keys(docKwMap), ...Object.keys(grantKwMap)]);
+  document.getElementById('h-grants').textContent = GRANTS.length;
+  document.getElementById('h-docs').textContent = DOCS.length;
+  document.getElementById('h-kw').textContent = allKws.size;
+  document.getElementById('h-memos').textContent = MEMOS.length;
+
+  document.getElementById('all-kw-list').innerHTML = `<div class="tags-wrap">${[...allKws].map(k => `<span class="badge b-blue" style="cursor:pointer;" onclick="event.stopPropagation();searchByKeyword('${k}')">${k}</span>`).join('')}</div>`;
+
+  // カード内のカテゴリバッジ（badge ${catColors[g.cat]}）の部分を削除
+  document.getElementById('home-grants').innerHTML = GRANTS.filter(g => g.featured).map(g => `
+    <div class="card" style="cursor:pointer;transition:all .15s;" onmouseenter="this.style.borderColor='var(--blue2)'" onmouseleave="this.style.borderColor=''" onclick="showGrantDetail('${g.id}')">
+      <div style="font-size:14px;font-weight:800;margin-bottom:6px;color:var(--t1);">${g.name}</div>
+      <div style="font-size:12px;color:var(--t2);line-height:1.6;margin-bottom:10px;">${g.summary}</div>
+      <div style="font-size:13px;font-weight:800;color:var(--amber);">${g.amount}</div>
+    </div>`).join('') || '<div style="color:var(--t3);">管理設定でよく使う助成金を設定してください</div>';
+
+  const recent = [...DOCS].reverse().slice(0, 5);
+  document.getElementById('home-docs').innerHTML = recent.length
+    ? recent.map(d => docCardHTML(d)).join('')
+    : '<div style="color:var(--t3);font-size:13px;">資料を追加してください</div>';
+
+  updatePastMemoSel();
+}
+
+    function toggleAllKw() {
+      const el = document.getElementById('all-kw-list');
+      const ic = document.getElementById('kw-toggle-icon');
+      const vis = el.style.display === 'none';
+      el.style.display = vis ? '' : 'none';
+      ic.textContent = vis ? '▲ 閉じる' : '▼ 展開';
+    }
+
+    // ════════════════════════════════════════
+    // HOME SEARCH
+    // ════════════════════════════════════════
+    function doHomeSearch(q) {
+      const el = document.getElementById('home-search-drop');
+      if (!q || !q.trim()) { el.style.display = 'none'; return; }
+      const kl = q.toLowerCase();
+      const res = [];
+      GRANTS.forEach(g => { if (g.name.toLowerCase().includes(kl) || (g.keywords || []).some(k => k.toLowerCase().includes(kl))) res.push({ type: 'grant', id: g.id, title: g.name, meta: '助成金', kws: (g.keywords||[]).filter(k=>k.toLowerCase().includes(kl)) }); });
+      DOCS.forEach(d => { if (d.name.toLowerCase().includes(kl) || (d.keywords || []).some(k => k.toLowerCase().includes(kl))) res.push({ type: 'doc', id: d.id, title: d.name, meta: '資料' }); });
+      el.style.display = 'block';
+      if (!res.length) { el.innerHTML = '<div class="sri"><div class="sri-meta" style="padding:4px 0;">一致する結果がありません</div></div>'; return; }
+      el.innerHTML = res.slice(0, 10).map(r => {
+        const kwHtml = r.kws && r.kws.length ? `<div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:3px;">${r.kws.slice(0,4).map(k=>`<span style="font-size:10px;background:var(--blue-bg);color:var(--blue);padding:1px 7px;border-radius:20px;font-weight:700;">${k}</span>`).join('')}</div>` : '';
+        // 資料は openResource（開く）、助成金は詳細表示
+        const fn = r.type === 'grant' ? `showGrantDetail('${r.id}')` : `openResource('${r.id}')`;
+        return `<div class="sri" onclick="${fn}; document.getElementById('home-search-drop').style.display='none';"><div class="sri-title">${r.type==='grant'?'💰':'📄'} ${r.title}</div><div class="sri-meta" style="color:var(--t3);">${r.meta}</div>${kwHtml}</div>`;
+      }).join('');
+    }
+    // キーワードバッジクリック時：searchにセットしてdoHomeSearchを呼ぶ
+    function searchByKeyword(kw) {
+      const inp = document.getElementById('home-search');
+      inp.value = kw;
+      doHomeSearch(kw);
+      // スクロールして検索欄を見せる
+      inp.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    document.addEventListener('click', e => { if (!e.target.closest('#home-search') && !e.target.closest('#home-search-drop') && !e.target.closest('#all-kw-list')) document.getElementById('home-search-drop').style.display = 'none'; });
+
+    // ════════════════════════════════════════
+    // CHECKLIST
+    // ════════════════════════════════════════
+    function renderChecklist() {
+      document.getElementById('check-list').innerHTML = CHECKS.map(c => `
+    <div class="check-item">
+      <input type="checkbox" id="chk-${c.id}" onchange="detectKwFromChecks()">
+      <label for="chk-${c.id}">${c.text}</label>
+      <span class="check-edit" onclick="openCheckAddModal('${c.id}')">✎</span>
+      <span class="check-del" onclick="deleteCheck('${c.id}')">×</span>
+    </div>`).join('') || '<div style="color:var(--t3);font-size:13px;">項目がありません</div>';
+      // admin
+      const el = document.getElementById('admin-checklist');
+      if (el) el.innerHTML = CHECKS.map(c => `<div class="check-item"><label style="flex:1;">${c.text}</label><span class="check-edit" onclick="openCheckAddModal('${c.id}')">✎</span><span class="check-del" onclick="deleteCheck('${c.id}')">×</span></div>`).join('');
+    }
+
+    // チェックされた項目のテキストでキーワード検出
+    function detectKwFromChecks() {
+      const checked = CHECKS.filter(c => {
+        const el = document.getElementById('chk-' + c.id);
+        return el && el.checked;
+      });
+      const memoText = document.getElementById('memo-text').value || '';
+      if (!checked.length && !memoText.trim()) {
+        // 全部外れてメモも空なら提案をクリア
+        document.getElementById('keyword-hits').innerHTML = '<div class="no-hits">メモを書くと<br>関連する助成金と資料が<br>自動で表示されます</div>';
+        return;
+      }
+      const combined = checked.map(c => c.text).join(' ') + ' ' + memoText;
+      detectKw(combined);
+    }
+    function openCheckAddModal(editId = '') {
+      document.getElementById('cam-id').value = editId;
+      if (editId) { const c = CHECKS.find(x => x.id === editId); if (c) document.getElementById('cam-text').value = c.text; }
+      else document.getElementById('cam-text').value = '';
+      document.getElementById('check-add-modal').classList.add('on');
+    }
+    function saveCheckItem() {
+      const text = document.getElementById('cam-text').value.trim();
+      if (!text) { showToast('内容を入力してください', false); return; }
+      const id = document.getElementById('cam-id').value;
+      if (id) { const c = CHECKS.find(x => x.id === id); if (c) c.text = text; }
+      else CHECKS.push({ id: 'c' + Date.now(), text });
+      LS.set('checks', CHECKS);
+      renderChecklist();
+      closeModal('check-add-modal');
+      showToast('保存しました');
+    }
+    function deleteCheck(id) {
+      if (!confirm('この項目を削除しますか？')) return;
+      CHECKS = CHECKS.filter(c => c.id !== id);
+      LS.set('checks', CHECKS);
+      renderChecklist();
+    }
+
+    // ════════════════════════════════════════
+    // MEMO INPUT / KEYWORD DETECT
+    // ════════════════════════════════════════
+let aiSuggestTimer = null;
+
+window.onMemoInput = function() {
+    const txt = document.getElementById('memo-text').value;
+    const charEl = document.getElementById('memo-char');
+    if (charEl) charEl.textContent = txt.length + '文字';
+    
+    // 10文字未満ならAIは動かさない
+    if (txt.length < 10) return;
+
+    clearTimeout(aiSuggestTimer);
+    aiSuggestTimer = setTimeout(() => {
+        runAiConsultant(txt);
+    }, 1500); 
+};
+    function detectKw(text) {
+      const lower = text.toLowerCase();
+      const hitGMap = new Map(), hitDMap = new Map();
+      Object.entries(grantKwMap).forEach(([kw, gids]) => {
+        if (!lower.includes(kw)) return;
+        gids.forEach(gid => {
+          const g = GRANTS.find(x => x.id === gid); if (!g) return;
+          if (!hitGMap.has(gid)) hitGMap.set(gid, { g, kws: [] });
+          hitGMap.get(gid).kws.push(kw);
+        });
+      });
+      Object.entries(docKwMap).forEach(([kw, dids]) => {
+        if (!lower.includes(kw)) return;
+        dids.forEach(did => {
+          const d = DOCS.find(x => x.id === did); if (!d) return;
+          if (!hitDMap.has(did)) hitDMap.set(did, { d, kws: [] });
+          hitDMap.get(did).kws.push(kw);
+        });
+      });
+      if (!hitGMap.size && !hitDMap.size) {
+        document.getElementById('keyword-hits').innerHTML = '<div class="no-hits">キーワードが検出されませんでした<br><br>管理・設定でキーワードを設定してください</div>'; return;
+      }
+      const html = [];
+      hitGMap.forEach(({ g, kws }) => {
+        const relDocs = DOCS.filter(d => d.grantId === g.id);
+        html.push(`<div class="hit-card" onclick="showGrantDetail('${g.id}')">
+      <div class="hit-card-name">💰 ${g.name}</div>
+      <div class="hit-kw">🔍 ${kws.map(k => `<b>${k}</b>`).join('、')}</div>
+      <div style="font-size:11px;color:var(--amber);font-weight:700;margin-bottom:6px;">${g.amount}</div>
+      ${relDocs.map(d => `<div class="doc-row" onclick="event.stopPropagation();openResource('${d.id}')">${typeIcon(d.type)} <span style="flex:1;">${d.name}</span> <span style="font-size:10px;color:var(--t3);">${(d.type || '').toUpperCase()}</span></div>`).join('')}
+    </div>`);
+      });
+      hitDMap.forEach(({ d, kws }) => {
+        if (d.grantId && hitGMap.has(d.grantId)) return;
+        html.push(`<div class="hit-card" style="border-left-color:var(--purple);" onclick="openResource('${d.id}')">
+      <div class="hit-card-name">${typeIcon(d.type)} ${d.name}</div>
+      <div class="hit-kw">🔍 ${kws.map(k => `<b>${k}</b>`).join('、')}</div>
+    </div>`);
+      });
+      document.getElementById('keyword-hits').innerHTML = html.join('');
+    }
+
+    // ════════════════════════════════════════
+    // MEMO SAVE / LOAD / PDF
+    // ════════════════════════════════════════
+// 保存ボタンから呼び出せるように window. に紐付ける
+window.saveMemo = async function() {
+    const company = document.getElementById('hv-company').value.trim();
+    const contact = document.getElementById('hv-contact').value.trim();
+    const text = document.getElementById('memo-text').value.trim();
+
+    if (!company) {
+        showToast('企業名を入力してください', false);
+        return;
+    }
+
+    const checkedIds = CHECKS.filter(c => {
+        const el = document.getElementById('chk-' + c.id);
+        return el && el.checked;
+    }).map(c => c.id);
+
+    let memoData = {
+        id: 'm' + Date.now(),
+        company: company,
+        contact: contact,
+        text: text,
+        checkedIds: checkedIds,
+        date: today(),
+        probability: "分析中...", 
+        probReason: ""
+    };
+
+    showToast("保存と同時にAI分析を開始します...");
+
+    const API_KEY = "AIzaSyBw_7rxaeiginZmFFHh4zm8qPAfYShZ09M";
+
+    try {
+        // ★ここを無料枠でたっぷり使える「gemini-2.5-flash」に変更しました！
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
+
+        const prompt = `あなたはプロの助成金コンサルタントです。
+以下のヒアリングメモから、成約確度（お客様が契約してくれる可能性）を10%〜100%の間で判定してください。
+また、その理由を30文字以内で1行で書いてください。
+出力は必ず以下のJSON形式のみとし、前後の説明文は一切不要です。
+{"prob": 数値, "reason": "理由"}
+
+ヒアリングメモ：
+${text}`;
+
+        const response = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: prompt }] }]
+            })
+        });
+
+        if (!response.ok) {
+            const errData = await response.json();
+            throw new Error(errData.error?.message || "通信エラー");
+        }
+
+        const data = await response.json();
+        const rawText = data.candidates[0].content.parts[0].text;
+
+        const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+            const parsedData = JSON.parse(jsonMatch[0]);
+            memoData.probability = parsedData.prob;
+            memoData.probReason = parsedData.reason;
+        } else {
+            throw new Error("AIの回答形式が不正です");
+        }
+
+    } catch (e) {
+        console.error("AI分析失敗詳細:", e);
+        memoData.probability = "エラー";
+        memoData.probReason = "分析失敗: " + e.message; 
+    }
+
+    // --- 保存処理 ---
+    const existingIdx = MEMOS.findIndex(m => m.company === company && (m.contact || '') === contact);
+    if (existingIdx >= 0) {
+        memoData.id = MEMOS[existingIdx].id;
+        MEMOS[existingIdx] = memoData;
+    } else {
+        MEMOS.unshift(memoData);
+    }
+
+    localStorage.setItem('gn2_memos', JSON.stringify(MEMOS));
+    if (typeof renderMemoList === 'function') renderMemoList();
+    
+    if (memoData.probability !== "エラー") {
+        showToast(`AI分析完了。確度${memoData.probability}%で履歴に登録しました。`);
+    } else {
+        showToast(`メモは保存されましたが、AI分析に失敗しました。`, false);
+    }
+};
+    function updateMemo() {
+      const id = document.getElementById('mm-id').value;
+      const m = MEMOS.find(x => x.id === id); if (!m) return;
+      // 既存レコードを上書き（新規追加しない）
+      m.company = document.getElementById('mm-company').value.trim();
+      m.contact = document.getElementById('mm-contact').value.trim();
+      m.text = document.getElementById('mm-text').value;
+      m.date = today();
+      LS.set('memos', MEMOS);
+      updatePastMemoSel();
+      renderMemoList();
+      closeModal('memo-modal');
+      showToast('更新しました');
+    }
+    function updatePastMemoSel() {
+      const sel = document.getElementById('past-memo-sel');
+      sel.innerHTML = '<option value="">— 選択してください —</option>' + MEMOS.map(m => `<option value="${m.id}">${m.date} ${m.company}</option>`).join('');
+    }
+function loadPastMemo() {
+    const id = document.getElementById('past-memo-sel').value;
+    if (!id) return;
+    const m = MEMOS.find(x => x.id === id);
+    if (!m) return;
+
+    // テキスト類を復元
+    document.getElementById('hv-company').value = m.company;
+    document.getElementById('hv-contact').value = m.contact || '';
+    document.getElementById('memo-text').value = m.text;
+
+    // 【修正ポイント】保存されていたIDが含まれていればチェックを入れる
+    CHECKS.forEach(c => {
+        const el = document.getElementById('chk-' + c.id);
+        if (el) {
+            // 保存データの中にこのIDがあればチェック、なければ外す
+            el.checked = (m.checkedIds && m.checkedIds.includes(c.id));
+        }
+    });
+
+    onMemoInput(); // キーワード提案を更新
+    showToast('チェック状態を復元しました');
+}
+    // 日本語テキストをPDF用ASCII安全文字列に変換
+    function toSafePdfText(str) {
+      // jsPDF標準フォントはASCIIのみ対応。日本語はUnicodeエスケープで保持
+      return (str || '').replace(/[^\x20-\x7E\n]/g, function(c) {
+        return '\\u' + c.charCodeAt(0).toString(16).padStart(4,'0');
+      });
+    }
+
+    function exportMemoPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const co = document.getElementById('hv-company').value || '(Untitled)';
+      const ct = document.getElementById('hv-contact').value || '';
+      const txt = document.getElementById('memo-text').value || '';
+      const dt = today();
+
+      // ── ヘッダー帯 ──
+      doc.setFillColor(58, 123, 213);
+      doc.rect(0, 0, 210, 22, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(14);
+      doc.text('Hearing Memo', 14, 14);
+      doc.setFontSize(9);
+      doc.text(dt, 196, 14, { align: 'right' });
+
+      // ── 企業情報 ──
+      doc.setTextColor(26, 35, 64);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.text('Company: ' + toSafePdfText(co), 14, 30);
+      if (ct) {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.text('Contact : ' + toSafePdfText(ct), 14, 37);
+      }
+      doc.setDrawColor(180, 200, 240);
+      doc.setLineWidth(0.4);
+      doc.line(14, ct ? 42 : 35, 196, ct ? 42 : 35);
+
+      // ── メモ本文 ──
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(50, 60, 90);
+      const rawLines = txt.split('\n');
+      let y = ct ? 48 : 41;
+      rawLines.forEach(line => {
+        if (y > 277) { doc.addPage(); y = 14; }
+        const safe = toSafePdfText(line) || ' ';
+        const wrapped = doc.splitTextToSize(safe, 182);
+        doc.text(wrapped, 14, y);
+        y += wrapped.length * 5 + 1.5;
+      });
+
+      // ── フッター ──
+      doc.setFontSize(8);
+      doc.setTextColor(180, 190, 210);
+      doc.text('Generated by Grant Navigator', 14, 290);
+
+      const safeCo = co.replace(/[^\x20-\x7E]/g, '_').slice(0, 20);
+      doc.save('hearing_' + safeCo + '_' + dt.replace(/[\/\s]/g, '') + '.pdf');
+      showToast('PDFを出力しました');
+    }
+
+    // ════════════════════════════════════════
+    // MEMO HISTORY
+    // ════════════════════════════════════════
+    function renderMemoList() {
+    const el = document.getElementById('memo-list');
+    el.innerHTML = MEMOS.map(m => {
+        const prob = m.probability || "未";
+        // 確度によってバッジの色を変える
+        const color = prob === "分析中..." ? "#999" : (prob >= 70 ? "#18a96a" : (prob >= 40 ? "#d4890a" : "#d94040"));
+
+        return `<tr>
+            <td style="font-size:12px;">${m.date}</td>
+            <td style="font-weight:bold;">${m.company}</td>
+            <td>${m.contact || ''}</td>
+            <td>
+                <span class="badge" style="background:${color}; color:white;">
+                    ${prob}${isNaN(prob) ? "" : "%"}
+                </span>
+                <div style="font-size:10px; color:#666; margin-top:2px;">${m.probReason || ''}</div>
+            </td>
+            <td><button class="btn btn-xs" onclick="openMemoModal('${m.id}')">詳細</button></td>
+        </tr>`;
+    }).join('');
+}
+    // ════════════════════════════════════════
+    // MEMO HISTORY (履歴画面のボタンを動かす修正)
+    // ════════════════════════════════════════
+
+    // 検索機能
+    window.filterMemos = function() { 
+        renderMemoList(document.getElementById('mh-search').value); 
+    };
+
+    // 「詳細」ボタン（モーダルを開く）
+    window.openMemoModal = function(id) {
+        const m = MEMOS.find(x => x.id === id); if (!m) return;
+        document.getElementById('mm-id').value = m.id;
+        document.getElementById('mm-title').textContent = m.company + ' — メモ';
+        document.getElementById('mm-company').value = m.company;
+        document.getElementById('mm-contact').value = m.contact || '';
+        document.getElementById('mm-text').value = m.text;
+        document.getElementById('memo-modal').classList.add('on');
+    };
+
+    // 「更新」ボタン
+    window.updateMemo = function() {
+        const id = document.getElementById('mm-id').value;
+        const m = MEMOS.find(x => x.id === id); if (!m) return;
+        // 既存レコードを上書き（新規追加しない）
+        m.company = document.getElementById('mm-company').value.trim();
+        m.contact = document.getElementById('mm-contact').value.trim();
+        m.text = document.getElementById('mm-text').value;
+        m.date = today();
+        LS.set('memos', MEMOS);
+        updatePastMemoSel();
+        renderMemoList();
+        closeModal('memo-modal');
+        showToast('更新しました');
+    };
+
+    // 過去メモ読み込み（ヒアリング画面用）
+    window.loadPastMemo = function() {
+        const id = document.getElementById('past-memo-sel').value;
+        if (!id) return;
+        const m = MEMOS.find(x => x.id === id);
+        if (!m) return;
+
+        document.getElementById('hv-company').value = m.company;
+        document.getElementById('hv-contact').value = m.contact || '';
+        document.getElementById('memo-text').value = m.text;
+
+        CHECKS.forEach(c => {
+            const el = document.getElementById('chk-' + c.id);
+            if (el) el.checked = (m.checkedIds && m.checkedIds.includes(c.id));
+        });
+
+        onMemoInput(); 
+        showToast('チェック状態を復元しました');
+    };
+
+    // 「削除」ボタン
+    window.deleteMemo = function(id) {
+        if (!confirm('このメモを削除しますか？')) return;
+        MEMOS = MEMOS.filter(m => m.id !== id); LS.set('memos', MEMOS); renderMemoList(); showToast('削除しました');
+    };
+
+    // 「PDF出力」ボタン（モーダル内）
+    window.exportMemoModalPDF = function() {
+        const { jsPDF } = window.jspdf; const doc = new jsPDF();
+        const co = document.getElementById('mm-company').value || '';
+        const txt = document.getElementById('mm-text').value || '';
+        doc.setFontSize(14); doc.text('Meeting Memo', 14, 18);
+        doc.setFontSize(10); doc.text('Company: ' + co, 14, 28); doc.text('Date: ' + today(), 14, 34);
+        doc.line(14, 38, 196, 38); const lines = doc.splitTextToSize(txt, 180); doc.text(lines, 14, 46);
+        doc.save('memo_' + co + '.pdf');
+    };
+
+    // ★すべての「閉じる」「キャンセル」ボタンを動かすための共通処理（これも忘れずに！）
+    window.closeModal = function(id) { document.getElementById(id)?.classList.remove('on'); };
+
+    // ════════════════════════════════════════
+    // GRANTS
+    // ════════════════════════════════════════
+    const CAT_CLR = { '雇用・採用': 'b-blue', 'IT・設備投資': 'b-teal', '研修・人材育成': 'b-purple', '働き方改革': 'b-amber', 'その他': 'b-gray' };
+    function filterGrants() { renderGrants(); }
+    function renderGrants(cat) {
+  const q = document.getElementById('grant-search')?.value.toLowerCase() || '';
+  let list = GRANTS;
+  if (q) list = list.filter(g => g.name.toLowerCase().includes(q) || (g.keywords || []).some(k => k.toLowerCase().includes(q)));
+  
+  document.getElementById('grant-list').innerHTML = list.map(g => `
+    <div class="card mb12" style="cursor:pointer;transition:border-color .15s;" onmouseenter="this.style.borderColor='var(--blue2)'" onmouseleave="this.style.borderColor=''" onclick="showGrantDetail('${g.id}')">
+      <div style="display:flex;align-items:flex-start;gap:12px;">
+        <div style="flex:1;">
+          <div class="mb8">${g.featured ? `<span class="badge b-amber">★ よく使う</span>` : ''}</div>
+          <div style="font-size:16px;font-weight:900;margin-bottom:5px;">${g.name}</div>
+          <div style="font-size:13px;color:var(--t2);line-height:1.6;">${g.summary}</div>
+          ${(g.keywords || []).length ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px;">${(g.keywords || []).map(k => `<span class="badge b-blue" style="font-size:10px;">${k}</span>`).join('')}</div>` : ''}
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div style="font-size:14px;font-weight:800;color:var(--amber);">${g.amount}</div>
+          <div style="font-size:11px;color:var(--t3);">${g.fee || ''}</div>
+        </div>
+      </div>
+    </div>`).join('') || '<div style="color:var(--t3);">該当なし</div>';
+}
+function showGrantDetail(gid) {
+      const g = GRANTS.find(x => x.id === gid); if (!g) return;
+      // DOCSを最新状態から取得（保存直後でも確実に表示）
+      DOCS = LS.arr('docs');
+      const relDocs = DOCS.filter(d => d.grantId && d.grantId === gid);
+      const flowSteps = (g.flow || '').split('\n').filter(s => s.trim());
+      document.getElementById('grant-detail-body').innerHTML = `
+    <div class="grant-hero">
+      <div class="mb12">${g.featured ? `<span class="badge b-amber">★ よく使う</span>` : ''}</div>
+      <div class="grant-hero-name">${g.name}</div>
+      <div class="grant-hero-summary">${g.summary}</div>
+      <div class="meta-row">
+        <div class="meta-item"><div class="meta-lbl">助成金額</div><div class="meta-val" style="color:var(--amber);">${g.amount}</div></div>
+        ${g.fee ? `<div class="meta-item"><div class="meta-lbl">手数料</div><div class="meta-val">${g.fee}</div></div>` : ''}
+        ${g.period ? `<div class="meta-item"><div class="meta-lbl">申請期間・タイミング</div><div class="meta-val" style="font-size:13px;max-width:340px;line-height:1.5;">${g.period}</div></div>` : ''}
+      </div>
+      <div style="display:flex;gap:8px;margin-top:16px;">
+        <button class="btn btn-sm btn-primary" onclick="openGrantEditModal('${g.id}')">編集</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteGrant('${g.id}')">削除</button>
+        <button class="btn btn-sm btn-primary" onclick="openDocModal('','${g.id}')">＋ 資料を追加</button>
+      </div>
+    </div>
+    ${g.desc ? `<div class="card mb18"><div class="card-title">詳細説明</div><div style="font-size:14px;line-height:1.8;color:var(--t2);white-space:pre-wrap;">${g.desc}</div></div>` : ''}
+    ${flowSteps.length ? `<div class="card mb18"><div class="card-title">申請の流れ</div><div class="flow-list">${flowSteps.map((s, i) => `<div class="flow-item"><div class="flow-num">${i + 1}</div><div class="flow-body"><div class="flow-title">${s}</div></div></div>`).join('')}</div></div>` : ''}
+    ${g.note ? `<div class="card mb18" style="border-color:var(--amber);background:var(--amber-bg);"><div class="card-title" style="color:var(--amber);">⚠️ 注意事項</div><div style="font-size:14px;line-height:1.8;white-space:pre-wrap;">${g.note}</div></div>` : ''}
+    <div class="card mb18">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <div class="card-title" style="margin-bottom:0;">📁 関連資料</div>
+        <button class="btn btn-sm btn-primary" onclick="openDocModal('','${g.id}')">＋ 追加</button>
+      </div>
+      ${relDocs.length ? `<div style="display:flex;flex-direction:column;gap:8px;">${relDocs.map(d => docCardHTML(d)).join('')}</div>` : '<div style="color:var(--t3);font-size:13px;text-align:center;padding:16px 0;">関連資料なし — 上のボタンから追加できます</div>'}
+    </div>
+    ${(g.keywords || []).length ? `<div class="card"><div class="card-title">キーワード</div><div style="display:flex;flex-wrap:wrap;gap:6px;">${(g.keywords || []).map(k => `<span class="badge b-blue">${k}</span>`).join('')}</div></div>` : ''}
+  `;
+      navTo('grant-detail');
+      document.getElementById('page-title').textContent = g.name;
+    }
+
+    // ════════════════════════════════════════
+    // GRANT EDIT MODAL
+    // ════════════════════════════════════════
+    function openGrantEditModal(editId = '') {
+  gmKws = [];
+  document.getElementById('gm-id').value = editId;
+  document.getElementById('gm-title').textContent = editId ? '💰 助成金を編集' : '💰 助成金コースを追加';
+  
+  if (editId) {
+    const g = GRANTS.find(x => x.id === editId);
+    if (g) {
+      document.getElementById('gm-name').value = g.name;
+      // ↓ ここから gm-cat の行を削除（またはコメントアウト）
+      // document.getElementById('gm-cat').value = g.cat; 
+      
+      document.getElementById('gm-summary').value = g.summary || '';
+      document.getElementById('gm-amount').value = g.amount || '';
+      document.getElementById('gm-fee').value = g.fee || '';
+      document.getElementById('gm-period').value = g.period || '';
+      document.getElementById('gm-desc').value = g.desc || '';
+      document.getElementById('gm-flow').value = g.flow || '';
+      document.getElementById('gm-note').value = g.note || '';
+      document.getElementById('gm-featured').checked = !!g.featured;
+      gmKws = [...(g.keywords || [])];
+    }
+  } else {
+    // 新規作成時のクリア処理からも gm-cat を削除
+    ['gm-name', 'gm-summary', 'gm-amount', 'gm-fee', 'gm-period', 'gm-desc', 'gm-flow', 'gm-note'].forEach(i => {
+      const el = document.getElementById(i);
+      if(el) el.value = '';
+    });
+    document.getElementById('gm-featured').checked = false;
+  }
+  renderGmKwTags();
+  document.getElementById('grant-modal').classList.add('on');
+}
+    function addGmKw() { const v = document.getElementById('gm-kw-inp').value.trim(); if (!v || gmKws.includes(v)) return; gmKws.push(v); document.getElementById('gm-kw-inp').value = ''; renderGmKwTags(); }
+    function renderGmKwTags() { document.getElementById('gm-kw-tags').innerHTML = gmKws.map((k, i) => `<span class="tag">${k}<span class="del-tag" onclick="gmKws.splice(${i},1);renderGmKwTags()">×</span></span>`).join(''); }
+    function saveGrant() {
+      const name = document.getElementById('gm-name').value.trim(); if (!name) { showToast('助成金名を入力してください', false); return; }
+      const id = document.getElementById('gm-id').value;
+      const g = { id: id || 'g' + Date.now(), name, cat: document.getElementById('gm-cat').value, summary: document.getElementById('gm-summary').value.trim(), amount: document.getElementById('gm-amount').value.trim(), fee: document.getElementById('gm-fee').value.trim(), period: document.getElementById('gm-period').value.trim(), desc: document.getElementById('gm-desc').value.trim(), flow: document.getElementById('gm-flow').value.trim(), note: document.getElementById('gm-note').value.trim(), featured: document.getElementById('gm-featured').checked, keywords: [...gmKws] };
+      if (id) { const i = GRANTS.findIndex(x => x.id === id); if (i >= 0) GRANTS[i] = g; } else GRANTS.push(g);
+      LS.set('grants', GRANTS); buildKwMaps(); closeModal('grant-modal'); renderGrants(currentGrantCat); loadHome(); showToast('保存しました');
+    }
+    function deleteGrant(id) {
+      if (!confirm('この助成金コースを削除しますか？')) return;
+      GRANTS = GRANTS.filter(g => g.id !== id); LS.set('grants', GRANTS); buildKwMaps(); navTo('grants'); showToast('削除しました');
+    }
+
+    // ════════════════════════════════════════
+    // DOCS
+    // ════════════════════════════════════════
+    function typeIcon(t) { return { pdf: '📄', word: '📝', excel: '📊', url: '🔗', other: '📁' }[t] || '📁'; }
+    function docCardHTML(d) {
+      return `<div class="doc-card">
+    <div class="doc-card-icon">${typeIcon(d.type)}</div>
+    <div class="doc-card-body">
+      <div class="doc-card-name">${d.name}</div>
+      ${d.desc ? `<div class="doc-card-desc">${d.desc}</div>` : ''}
+      <div class="doc-card-tags">${(d.keywords || []).map(k => `<span class="doc-card-tag">${k}</span>`).join('')}</div>
+    </div>
+    <div class="doc-card-actions">
+      <button class="btn btn-xs btn-primary" onclick="openResource('${d.id}')">開く</button>
+      <button class="btn btn-xs" onclick="openDocModal('${d.id}')">編集</button>
+      <button class="btn btn-xs btn-danger" onclick="deleteDoc('${d.id}')">削除</button>
+    </div>
+  </div>`;
+    }
+    function renderDocs() {
+      const q = document.getElementById('doc-search')?.value.toLowerCase() || '';
+      let list = DOCS;
+      if (q) list = list.filter(d => d.name.toLowerCase().includes(q) || (d.keywords || []).some(k => k.toLowerCase().includes(q)));
+      document.getElementById('doc-list').innerHTML = list.length ? `<div style="display:flex;flex-direction:column;gap:8px;">${list.map(d => docCardHTML(d)).join('')}</div>` : '<div style="color:var(--t3);font-size:13px;text-align:center;padding:30px 0;">資料がありません</div>';
+    }
+    function filterDocs() { renderDocs(); }
+    function openResource(docId) {
+      const d = DOCS.find(x => x.id === docId); if (!d) return;
+      if (d.url) window.open(d.url, '_blank');
+      else if (d.filename) showToast('ファイル名: ' + d.filename + ' — Supabase設定後にアップロードできます');
+      else showToast('URLまたはファイルが未設定です', false);
+    }
+    function deleteDoc(id) {
+      if (!confirm('この資料を削除しますか？')) return;
+      DOCS = DOCS.filter(d => d.id !== id); LS.set('docs', DOCS); buildKwMaps(); renderDocs(); loadHome(); showToast('削除しました');
+    }
+
+    // ── Doc Modal ──
+function openDocModal(editId = '', defaultGrantId = '') {
+  dmKws = [];
+  document.getElementById('dm-id').value = editId;
+  document.getElementById('dm-title').textContent = editId ? '📁 資料を編集' : '📁 資料を追加';
+  
+  // ↓ dm-grant 要素を消した場合は、この innerHTML 操作ごと削除
+  // const grantSel = document.getElementById('dm-grant');
+  // if(grantSel) grantSel.innerHTML = '...'; 
+
+  if (editId) {
+    const d = DOCS.find(x => x.id === editId);
+    if (d) {
+      document.getElementById('dm-name').value = d.name;
+      
+      // ↓ 削除した要素へのアクセスを消す
+      // document.getElementById('dm-cat').value = d.cat || '';
+      // document.getElementById('dm-grant').value = d.grantId || '';
+      
+      document.getElementById('dm-url').value = d.url || '';
+      document.getElementById('dm-filename').value = d.filename || '';
+      document.getElementById('dm-desc').value = d.desc || '';
+      dmKws = [...(d.keywords || [])];
+      selDocType(null, d.type || 'url');
+    }
+  } else {
+    ['dm-name', 'dm-url', 'dm-filename', 'dm-desc'].forEach(i => {
+      const el = document.getElementById(i);
+      if(el) el.value = '';
+    });
+    // document.getElementById('dm-cat').value = ''; // 削除
+    selDocType(null, 'url');
+  }
+  renderDmKwTags();
+  document.getElementById('doc-modal').classList.add('on');
+}
+    function selDocType(btn, type) {
+      document.getElementById('dm-type').value = type;
+      document.querySelectorAll('#dm-type-btns .btn').forEach(b => b.classList.remove('on'));
+      if (btn) btn.classList.add('on');
+      else document.querySelectorAll('#dm-type-btns .btn').forEach(b => { const t = b.getAttribute('onclick')?.match(/'([^']+)'\)/)?.[1]; if (t === type) b.classList.add('on'); });
+      document.getElementById('dm-url-grp').style.display = type === 'url' ? '' : 'none';
+      document.getElementById('dm-file-grp').style.display = type !== 'url' ? '' : 'none';
+    }
+    function addDmKw() { const v = document.getElementById('dm-kw-inp').value.trim(); if (!v || dmKws.includes(v)) return; dmKws.push(v); document.getElementById('dm-kw-inp').value = ''; renderDmKwTags(); }
+    function renderDmKwTags() { document.getElementById('dm-kw-tags').innerHTML = dmKws.map((k, i) => `<span class="tag">${k}<span class="del-tag" onclick="dmKws.splice(${i},1);renderDmKwTags()">×</span></span>`).join(''); }
+    function saveDoc() {
+  const name = document.getElementById('dm-name').value.trim();
+  if (!name) { showToast('資料名を入力してください', false); return; }
+  const id = document.getElementById('dm-id').value;
+  const type = document.getElementById('dm-type').value;
+
+  // dm-grant を削除したなら、以下のように固定値にするか、取得を止める
+  const d = {
+    id: id || 'd' + Date.now(),
+    name: name,
+    type: type,
+    url: document.getElementById('dm-url').value.trim(),
+    filename: document.getElementById('dm-filename').value.trim(),
+    desc: document.getElementById('dm-desc').value.trim(),
+    keywords: [...dmKws]
+  };
+      if (id) { const i = DOCS.findIndex(x => x.id === id); if (i >= 0) DOCS[i] = d; } else DOCS.unshift(d);
+      LS.set('docs', DOCS); buildKwMaps(); closeModal('doc-modal'); renderDocs(); loadHome();
+      // 関連助成金詳細が開いていれば再描画
+      if (grantIdVal && document.getElementById('s-grant-detail')?.classList.contains('on')) showGrantDetail(grantIdVal);
+      showToast('保存しました');
+    }
+
+    // ════════════════════════════════════════
+    // BOARD　投稿板
+    // ════════════════════════════════════════
+// ════════════════════════════════════════
+  // 掲示板・通知システム
+  // ════════════════════════════════════════
+
+  // 中央テロップアニメーションの実行
+  window.startNotification = function(message) {
+    var bar = document.getElementById('notif-bar');
+    var text = document.getElementById('notif-text');
+    var container = document.getElementById('notif-container');
+    if (!bar || !text || !container) return;
+
+    bar.style.display = 'flex';
+    bar.style.opacity = '1';
+    bar.style.top = '20px';
+    text.textContent = message;
+    
+    var containerWidth = container.offsetWidth;
+    var textWidth = text.offsetWidth || (message.length * 14);
+    var speed = 70; // 速度（ピクセル/秒）
+    var start = null;
+
+    function step(timestamp) {
+      if (!start) start = timestamp;
+      var progress = timestamp - start;
+      var x = containerWidth - (progress / 1000) * speed;
+      text.style.transform = 'translateX(' + x + 'px)';
+
+      if (x > -textWidth) {
+        window.requestAnimationFrame(step);
+      } else {
+        // 終了時のフェードアウト
+        bar.style.transition = 'all 0.6s ease-in-out';
+        bar.style.opacity = '0';
+        bar.style.top = '0px';
+        setTimeout(function() {
+          bar.style.display = 'none';
+        }, 600);
+      }
+    }
+    window.requestAnimationFrame(step);
+  };
+
+  // オフライン（後から入った）ユーザー用の未読チェック
+  window.checkNewPostsAndNotify = function() {
+    if (!BOARD || BOARD.length === 0) return;
+    var latestPost = BOARD[0];
+    var lastReadId = LS.get('last_read_notif_id');
+
+    // 最後に見たIDと最新IDが違えば通知
+    if (latestPost.id !== lastReadId) {
+      var shortT = latestPost.title.length > 10 ? latestPost.title.substring(0, 10) + '...' : latestPost.title;
+      setTimeout(function() {
+        window.startNotification('【未読のお知らせ】' + shortT + '：' + latestPost.body);
+        // 既読として保存
+        LS.set('last_read_notif_id', latestPost.id);
+      }, 2000);
+    }
+  };
+
+  // 新規投稿処理
+  window.postBoard = function() {
+    var titleEl = document.getElementById('board-title');
+    var bodyEl = document.getElementById('board-body');
+    var title = titleEl.value.trim();
+    var body = bodyEl.value.trim();
+    if (!title || !body) { showToast('タイトルと内容を入力してください', false); return; }
+
+    var now = new Date();
+    var dateTime = now.toLocaleDateString('ja-JP',{year:'numeric',month:'2-digit',day:'2-digit'}) + ' '
+      + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+    var newId = 'b' + Date.now();
+
+    BOARD.unshift({ id: newId, title: title, body: body, dateTime: dateTime, author: '自分' });
+    LS.set('board', BOARD);
+    // 自分の投稿は既読にする
+    var readIds = LS.arr('board_read_ids');
+    readIds.push(newId);
+    LS.set('board_read_ids', readIds);
+
+    var shortTitle = title.length > 10 ? title.substring(0, 10) + '...' : title;
+    if (typeof window.startNotification === 'function') window.startNotification('【' + shortTitle + '】 ' + body);
+
+    titleEl.value = ''; bodyEl.value = '';
+    renderBoard();
+    updateBoardBadge();
+    showToast('投稿しました');
+  };
+
+  // 掲示板の表示
+  window.renderBoard = function() {
+    var listEl = document.getElementById('board-list');
+    if (!BOARD || BOARD.length === 0) {
+      listEl.innerHTML = '<div style="color:var(--t3);text-align:center;padding:30px;">投稿がありません</div>';
+      return;
+    }
+    var readIds = LS.arr('board_read_ids');
+    var html = '';
+    for (var i = 0; i < BOARD.length; i++) {
+      var p = BOARD[i];
+      var isUnread = readIds.indexOf(p.id) === -1;
+      html += '<div class="board-post" id="bpost-' + p.id + '" style="' + (isUnread ? 'border-color:var(--red);' : '') + '">';
+      html += '<div class="board-post-header"><div>';
+      html += '<div style="font-size:15px;font-weight:800;margin-bottom:4px;">';
+      if (isUnread) html += '<span class="board-unread"></span>';
+      html += p.title + '</div>';
+      html += '<div class="board-post-meta"><span class="board-post-author">' + (p.author||'—') + '</span> · ' + (p.dateTime || p.date || '') + '</div></div>';
+      html += '<div style="display:flex;gap:5px;">';
+      if (isUnread) html += '<button class="btn btn-xs btn-success" onclick="markBoardRead(\'' + p.id + '\')">✓ 確認</button>';
+      html += '<button class="btn btn-xs btn-danger" onclick="deleteBoard(\'' + p.id + '\')">削除</button></div></div>';
+      html += '<div class="board-post-body">' + p.body + '</div></div>';
+    }
+    listEl.innerHTML = html;
+    updateBoardBadge();
+    renderUnreadBanner();
+  };
+
+  // 既読にする
+  window.markBoardRead = function(id) {
+    var readIds = LS.arr('board_read_ids');
+    if (readIds.indexOf(id) === -1) readIds.push(id);
+    LS.set('board_read_ids', readIds);
+    renderBoard();
+    updateBoardBadge();
+  };
+
+  // 全て既読
+  window.clearAllUnread = function() {
+    var readIds = LS.arr('board_read_ids');
+    BOARD.forEach(function(p) { if (readIds.indexOf(p.id) === -1) readIds.push(p.id); });
+    LS.set('board_read_ids', readIds);
+    renderBoard();
+    updateBoardBadge();
+    document.getElementById('board-unread-banner').style.display = 'none';
+  };
+
+  // サイドバーバッジ更新
+  window.updateBoardBadge = function() {
+    var readIds = LS.arr('board_read_ids');
+    var cnt = BOARD.filter(function(p) { return readIds.indexOf(p.id) === -1; }).length;
+    var badge = document.getElementById('board-badge');
+    if (!badge) return;
+    badge.textContent = cnt;
+    badge.style.display = cnt > 0 ? '' : 'none';
+  };
+
+  // 未読バナー（掲示板画面上部）
+  window.renderUnreadBanner = function() {
+    var readIds = LS.arr('board_read_ids');
+    var unread = BOARD.filter(function(p) { return readIds.indexOf(p.id) === -1; });
+    var banner = document.getElementById('board-unread-banner');
+    var itemsEl = document.getElementById('board-unread-items');
+    if (!banner || !itemsEl) return;
+    if (!unread.length) { banner.style.display = 'none'; return; }
+    banner.style.display = '';
+    itemsEl.innerHTML = unread.map(function(p) {
+      return '<div style="padding:5px 0;border-bottom:1px solid var(--red-bg);display:flex;justify-content:space-between;align-items:center;">'
+        + '<div><span style="font-size:12px;font-weight:700;color:var(--t1);">' + p.title + '</span>'
+        + '<span style="font-size:11px;color:var(--t3);margin-left:8px;">' + (p.dateTime||p.date||'') + '</span></div>'
+        + '<button class="btn btn-xs btn-success" onclick="markBoardRead(\'' + p.id + '\')">✓ 確認</button></div>';
+    }).join('');
+  };
+
+  // ログイン時・画面遷移時にバッジ更新
+  window.checkBoardOnLogin = function() {
+    updateBoardBadge();
+  };
+
+  // 投稿削除
+  window.deleteBoard = function(id) {
+    if (!confirm('削除しますか？')) return;
+    BOARD = BOARD.filter(function(b) { return b.id !== id; });
+    LS.set('board', BOARD);
+    renderBoard();
+    updateBoardBadge();
+  };
+
+
+
+
+    // ════════════════════════════════════════
+    // CALENDAR
+    // ════════════════════════════════════════
+/* --- カレンダー機能（GAS安全版） --- */
+var calSelColor = 'blue';
+
+window.renderCalendar = function() {
+  // メンバーフィルター
+  var mbrEl = document.getElementById('cal-members');
+  var mbrHtml = '<div class="cal-member-btn ' + (calSelMembers.has('all') ? 'on' : '') + '" onclick="toggleCalMember(\'all\')">全員</div>';
+  
+  for (var i = 0; i < MEMBERS.length; i++) {
+    var m = MEMBERS[i];
+    mbrHtml += '<div class="cal-member-btn ' + (calSelMembers.has(m.id) ? 'on' : '') + '" onclick="toggleCalMember(\'' + m.id + '\')">' + m.name + '</div>';
+  }
+  mbrEl.innerHTML = mbrHtml;
+
+  var d = new Date(calYear, calMonth, 1);
+  document.getElementById('cal-title').textContent = calYear + '年 ' + (calMonth + 1) + '月';
+  
+  var heads = ['日', '月', '火', '水', '木', '金', '土'];
+  var headHtml = '';
+  for (var j = 0; j < heads.length; j++) {
+    headHtml += '<div class="cal-head">' + heads[j] + '</div>';
+  }
+  document.getElementById('cal-head').innerHTML = headHtml;
+
+  var first = d.getDay();
+  var days = new Date(calYear, calMonth + 1, 0).getDate();
+  var prev = new Date(calYear, calMonth, 0).getDate();
+  var cells = [];
+  for (var k = first - 1; k >= 0; k--) cells.push({ day: prev - k, cur: false });
+  for (var l = 1; l <= days; l++) cells.push({ day: l, cur: true });
+  while (cells.length % 7) cells.push({ day: cells.length - days - first + 1, cur: false });
+
+  var today_ = new Date();
+  var gridHtml = '';
+  for (var m = 0; m < cells.length; m++) {
+    var c = cells[m];
+    var isToday = c.cur && c.day === today_.getDate() && calMonth === today_.getMonth() && calYear === today_.getFullYear();
+    var dateStr = calYear + '-' + ('0' + (calMonth + 1)).slice(-2) + '-' + ('0' + c.day).slice(-2);
+    
+    var events = CAL_EVENTS.filter(function(e) {
+      return e.date === dateStr && (calSelMembers.has('all') || !e.memberId || calSelMembers.has(e.memberId));
+    });
+
+    var cellHtml = '<div class="cal-day ' + (isToday ? 'today' : '') + ' ' + (c.cur ? '' : 'other-month') + '" onclick="openCalEventModal(\'' + dateStr + '\')">';
+    cellHtml += '<div class="cal-day-num">' + c.day + '</div>';
+    
+    for (var n = 0; n < events.length; n++) {
+      var ev = events[n];
+      cellHtml += '<div class="cal-event ' + (ev.color || 'blue') + '" onclick="event.stopPropagation();openCalEventModal(\'' + dateStr + '\',\'' + ev.id + '\')">' + (ev.time ? ev.time + ' ' : '') + ev.title + '</div>';
+    }
+    cellHtml += '</div>';
+    gridHtml += cellHtml;
+  }
+  document.getElementById('cal-grid').innerHTML = gridHtml;
+};
+
+window.calPrev = function() { calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; } renderCalendar(); };
+window.calNext = function() { calMonth++; if (calMonth > 11) { calMonth = 0; calYear++; } renderCalendar(); };
+
+window.toggleCalMember = function(id) {
+  if (id === 'all') { 
+    calSelMembers = calSelMembers.has('all') ? new Set() : new Set(['all']); 
+  } else { 
+    calSelMembers.delete('all'); 
+    if (calSelMembers.has(id)) calSelMembers.delete(id); else calSelMembers.add(id); 
+    if (!calSelMembers.size) calSelMembers.add('all'); 
+  }
+  renderCalendar();
+};
+
+window.selCalColor = function(el, color) {
+  calSelColor = color; document.getElementById('cev-color').value = color;
+  var colorBtns = document.querySelectorAll('#cal-event-modal [onclick^="selCalColor"]');
+  for (var i = 0; i < colorBtns.length; i++) colorBtns[i].style.border = 'none';
+  el.style.border = '3px solid var(--t1)';
+};
+
+window.openCalEventModal = function(dateStr, eventId) {
+  dateStr = dateStr || '';
+  eventId = eventId || '';
+  document.getElementById('cev-id').value = eventId;
+  document.getElementById('cev-date').value = dateStr || new Date().toISOString().slice(0, 10);
+  document.getElementById('cev-del-btn').style.display = eventId ? '' : 'none';
+  
+  var mbrOptions = '<option value="">なし</option>';
+  for (var i = 0; i < MEMBERS.length; i++) {
+    mbrOptions += '<option value="' + MEMBERS[i].id + '">' + MEMBERS[i].name + '</option>';
+  }
+  document.getElementById('cev-member').innerHTML = mbrOptions;
+  
+  if (eventId) {
+    var e = CAL_EVENTS.find(function(x) { return x.id === eventId; });
+    if (e) {
+      document.getElementById('cev-title').value = e.title;
+      document.getElementById('cev-time').value = e.time || '10:00';
+      document.getElementById('cev-member').value = e.memberId || '';
+      document.getElementById('cev-note').value = e.note || '';
+      document.getElementById('cev-color').value = e.color || 'blue';
+      calSelColor = e.color || 'blue';
+    }
+  } else {
+    document.getElementById('cev-title').value = '';
+    document.getElementById('cev-note').value = '';
+    document.getElementById('cev-time').value = '10:00';
+    calSelColor = 'blue';
+  }
+  document.getElementById('cal-event-modal').classList.add('on');
+};
+
+window.saveCalEvent = function() {
+  var title = document.getElementById('cev-title').value.trim();
+  if (!title) { showToast('タイトルを入力してください', false); return; }
+  var id = document.getElementById('cev-id').value;
+  var e = { 
+    id: id || 'ev' + Date.now(), 
+    title: title, 
+    date: document.getElementById('cev-date').value, 
+    time: document.getElementById('cev-time').value, 
+    memberId: document.getElementById('cev-member').value, 
+    note: document.getElementById('cev-note').value.trim(), 
+    color: document.getElementById('cev-color').value 
+  };
+  if (id) { 
+    var idx = CAL_EVENTS.findIndex(function(x) { return x.id === id; }); 
+    if (idx >= 0) CAL_EVENTS[idx] = e; 
+  } else {
+    CAL_EVENTS.push(e);
+  }
+  LS.set('cal_events', CAL_EVENTS); 
+  closeModal('cal-event-modal'); 
+  renderCalendar();
+  showToast('予定を追加しました');
+};
+
+window.deleteCalEvent = function() {
+  var id = document.getElementById('cev-id').value;
+  if (!id) return;
+  if (!confirm('削除しますか？')) return;
+  CAL_EVENTS = CAL_EVENTS.filter(function(e) { return e.id !== id; });
+  LS.set('cal_events', CAL_EVENTS);
+  closeModal('cal-event-modal');
+  renderCalendar();
+  showToast('削除しました');
+};
+
+    // ════════════════════════════════════════
+    // MESSAGE — システム内保存＋自動送信
+    // ════════════════════════════════════════
+    // MSG_HISTORYはloadMsgDocPicker時に都度最新を読む（変数に持ちっぱなしにしない）
+
+    function loadMsgDocPicker() {
+      var sel = document.getElementById('msg-to-sel');
+      if (sel) sel.innerHTML = '<option value="">メンバーから選択...</option>' + MEMBERS.map(m => `<option value="${m.email||''}" data-name="${m.name}">${m.name}${m.email?' ('+m.email+')':''}</option>`).join('');
+      document.getElementById('msg-doc-picker').innerHTML = '<option value="">＋ 資料を選択して添付...</option>' + DOCS.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+      renderMsgDocs();
+      renderMsgHistory();
+    }
+
+    function onMsgToSel(sel) {
+      if (sel.value) document.getElementById('msg-to').value = sel.value;
+    }
+
+    function addMsgDoc(sel) {
+      const id = sel.value; if (!id) return;
+      const d = DOCS.find(x => x.id === id); if (!d || msgDocs.find(x => x.id === id)) return;
+      msgDocs.push(d); sel.value = ''; renderMsgDocs();
+    }
+    function renderMsgDocs() {
+      document.getElementById('msg-doc-sel').innerHTML = msgDocs.map((d, i) => `<span class="tag">${typeIcon(d.type)} ${d.name}<span class="del-tag" onclick="msgDocs.splice(${i},1);renderMsgDocs()">×</span></span>`).join('');
+    }
+
+    function sendMsg() {
+      const to = document.getElementById('msg-to').value.trim();
+      const subj = document.getElementById('msg-subject').value.trim();
+      const body = document.getElementById('msg-body').value.trim();
+      if (!to || !subj || !body) { showToast('宛先・件名・本文を入力してください', false); return; }
+
+      const now = new Date();
+      const dateTime = now.toLocaleDateString('ja-JP',{year:'numeric',month:'2-digit',day:'2-digit'}) + ' '
+        + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+
+      const record = {
+        id: 'msg' + Date.now(), to, subj, body,
+        docs: msgDocs.map(d => ({ name: d.name, url: d.url || '' })),
+        dateTime, status: 'sent'
+      };
+
+      // ① システム内に保存（送信時のみ）
+      const hist = LS.arr('msg_history');
+      hist.unshift(record);
+      LS.set('msg_history', hist);
+
+      // ② 自動送信（EmailJS設定後）
+      const EMAILJS_SERVICE = 'YOUR_SERVICE_ID';
+      const EMAILJS_TEMPLATE = 'YOUR_TEMPLATE_ID';
+      const EMAILJS_KEY = 'YOUR_PUBLIC_KEY';
+
+      let docLinks = msgDocs.map(d => d.name + (d.url ? ' : ' + d.url : '')).join('\n');
+      let fullBody = body + (docLinks ? '\n\n--- 添付資料 ---\n' + docLinks : '');
+
+      if (EMAILJS_SERVICE !== 'YOUR_SERVICE_ID' && typeof emailjs !== 'undefined') {
+        emailjs.init(EMAILJS_KEY);
+        emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, { to_email: to, subject: subj, message: fullBody })
+          .then(() => { showToast('送信完了 — ' + to + ' に送信しました'); })
+          .catch(() => { showToast('自動送信に失敗しました', false); });
+      } else {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
+        window.open(url, '_blank');
+        showToast('Gmailで送信してください（EmailJS設定後は自動送信）');
+      }
+
+      renderMsgHistory();
+      clearMsg();
+    }
+
+    function renderMsgHistory() {
+      const el = document.getElementById('msg-history-list');
+      if (!el) return;
+      const hist = LS.arr('msg_history');
+      el.innerHTML = hist.length
+        ? hist.map(m => `
+          <div class="card card-sm mb8">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
+              <div style="font-size:13px;font-weight:800;">${m.subj}</div>
+              <div style="font-size:10px;color:var(--t3);flex-shrink:0;margin-left:8px;">${m.dateTime}</div>
+            </div>
+            <div style="font-size:12px;color:var(--t2);">宛先: ${m.to}</div>
+            <div style="font-size:12px;color:var(--t3);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${m.body}</div>
+            ${m.docs&&m.docs.length?`<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px;">${m.docs.map(d=>`<span style="font-size:10px;background:var(--blue-bg);color:var(--blue);padding:2px 8px;border-radius:20px;">📎 ${d.name}</span>`).join('')}</div>`:''}
+            <div style="display:flex;justify-content:flex-end;gap:6px;margin-top:8px;">
+              <button class="btn btn-xs" onclick="replyMsg('${m.id}')">返信</button>
+              <button class="btn btn-xs btn-danger" onclick="deleteMsgHistory('${m.id}')">削除</button>
+            </div>
+          </div>`).join('')
+        : '<div style="color:var(--t3);font-size:13px;text-align:center;padding:20px 0;">送信履歴なし</div>';
+    }
+
+    function replyMsg(id) {
+      const hist = LS.arr('msg_history');
+      const m = hist.find(x => x.id === id); if (!m) return;
+      document.getElementById('msg-to').value = m.to;
+      document.getElementById('msg-subject').value = 'RE: ' + m.subj;
+      document.getElementById('msg-body').value = '';
+      showToast('返信モードで開きました');
+    }
+
+    function deleteMsgHistory(id) {
+      if (!confirm('削除しますか？')) return;
+      const hist = LS.arr('msg_history').filter(m => m.id !== id);
+      LS.set('msg_history', hist);
+      renderMsgHistory();
+    }
+
+    function clearMsg() {
+      ['msg-to', 'msg-subject', 'msg-body'].forEach(i => { const el = document.getElementById(i); if (el) el.value = ''; });
+      const sel = document.getElementById('msg-to-sel'); if (sel) sel.value = '';
+      msgDocs = []; renderMsgDocs();
+      document.getElementById('msg-edit-id').value = '';
+    }
+
+    // 旧openGmailはsendMsgに統合済み（互換用に残す）
+    function openGmail() { sendMsg(); }
+
+    // ════════════════════════════════════════
+    // ADMIN
+    // ════════════════════════════════════════
+// 従業員の新規追加
+async function addMember() {
+  const name = document.getElementById('adm-member-name').value.trim();
+  const email = document.getElementById('adm-member-email').value.trim();
+  const pass = document.getElementById('adm-member-pass').value;
+
+  try {
+    const { data, error } = await supabaseClient.auth.signUp({
+      email: email,
+      password: pass,
+      options: {
+        // SQL側のトリガーがこの 'display_name' を見て profiles に挿入します
+        data: { display_name: name } 
+      }
+    });
+
+    if (error) throw error;
+    showToast('従業員を追加しました（トリガーにより自動名簿登録）');
+    renderAdmin(); 
+  } catch (err) {
+    showToast('登録失敗: ' + err.message, false);
+  }
+}
+
+// 従業員一覧の取得
+async function renderAdmin() {
+  const tbody = document.getElementById('admin-members');
+  tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:16px;">読み込み中...</td></tr>';
+
+  try {
+    // profilesテーブルからデータを取得
+    const { data: members, error } = await supabaseClient
+      .from('profiles') 
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    // ここで「編集」ボタンを各行に生成します
+    tbody.innerHTML = members.map(m => `
+      <tr>
+        <td style="font-weight:700;">${m.display_name || '名前未設定'}</td>
+        <td style="color:var(--t2); font-size:12px;">${m.email || '—'}</td>
+        <td style="white-space:nowrap;">
+          <button class="btn btn-xs btn-primary" style="margin-right:4px;" onclick="openEditMember('${m.id}')">編集</button>
+          <button class="btn btn-xs btn-danger" onclick="deleteMember('${m.id}')">削除</button>
+        </td>
+      </tr>`).join('') || '<tr><td colspan="3" style="color:var(--t3); text-align:center;padding:16px;">従業員なし</td></tr>';
+  } catch (err) {
+    console.error(err);
+    tbody.innerHTML = `<tr><td colspan="3" style="color:var(--red); text-align:center;padding:16px;">取得失敗: ${err.message}</td></tr>`;
+  }
+}
+// 編集画面を開く関数
+/**
+ * 編集モーダルを開く（表示のみ）
+ */
+// モーダルを開いて既存データをセット
+async function openEditMember(id) {
+  try {
+    const { data: m, error } = await supabaseClient
+      .from('profiles')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) throw error;
+
+    document.getElementById('edit-member-id').value = m.id;
+    document.getElementById('edit-member-name').value = m.display_name || '';
+    document.getElementById('edit-member-email').value = m.email || '';
+    document.getElementById('edit-member-pass').value = ''; // パスワードは常に空で開始
+
+    document.getElementById('modal-edit-member').classList.add('on');
+  } catch (err) {
+    showToast('データ取得失敗', false);
+  }
+}
+
+// 保存ボタン（更新保存）が押された時
+async function updateMember() {
+  const id = document.getElementById('edit-member-id').value;
+  const newName = document.getElementById('edit-member-name').value.trim();
+  const newPass = document.getElementById('edit-member-pass').value.trim();
+
+  if (!newName) {
+    showToast('名前を入力してください', false);
+    return;
+  }
+
+  try {
+    // 1. プロフィールテーブル（名前）の更新
+    // これをしないと、一覧画面の名前は変わりません
+    const { error: dbError } = await supabaseClient
+      .from('profiles')
+      .update({ display_name: newName })
+      .eq('id', id);
+
+    if (dbError) throw dbError;
+
+    // 2. パスワードの入力がある場合のみ、パスワードを更新
+    if (newPass) {
+      if (newPass.length < 8) {
+        showToast('パスワードは8文字以上にしてください', false);
+        return;
+      }
+
+      const { error: authError } = await supabaseClient.auth.updateUser({
+        password: newPass
+      });
+      
+      if (authError) {
+        console.warn("Auth更新エラー:", authError.message);
+        // 他人のパスワード変更制限などで失敗しても、名前の更新だけは完了している場合があります
+      } else {
+        showToast('パスワードも更新しました');
+      }
+    }
+
+    showToast('従業員情報を更新しました');
+    closeModal('modal-edit-member');
+    renderAdmin(); // 一覧を再描画して名前が変わったことを確認
+    
+  } catch (err) {
+    console.error(err);
+    showToast('更新失敗: ' + err.message, false);
+  }
+}
+
+/**
+ * パスワードのみを上書き保存する
+ */
+async function updatePasswordOnly() {
+  const newPass = document.getElementById('edit-member-pass').value.trim();
+
+  if (!newPass || newPass.length < 8) {
+    showToast('パスワードは8文字以上で入力してください', false);
+    return;
+  }
+
+  try {
+    // ⚠️ profilesへのupdateは行わず、Authのパスワード変更のみ実行
+    const { data, error } = await supabaseClient.auth.updateUser({
+      password: newPass
+    });
+
+    if (error) throw error;
+
+    showToast('パスワードを更新しました');
+    closeModal('modal-edit-member');
+    
+  } catch (err) {
+    // ブラウザJSの制限で他人のパスを変更できない場合、エラーを表示
+    alert("権限エラー: " + err.message + "\n\n自分以外のパスワード変更はSupabaseダッシュボードのAuthenticationから直接実行してください。");
+    showToast('更新失敗', false);
+  }
+}
+
+
+
+async function deleteMember(id) {
+  if (!confirm('この従業員を削除しますか？\n（※一度削除すると元に戻せません）')) return;
+
+  try {
+    // profilesテーブルから削除を試みる
+    const { error } = await supabaseClient
+      .from('profiles')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Delete error detail:', error);
+      // RLS（権限）エラーの場合や、制約エラーの場合のメッセージ
+      throw new Error(error.message || 'データベース制約により削除できません');
+    }
+
+    showToast('従業員を一覧から削除しました');
+    renderAdmin(); 
+  } catch (err) {
+    console.error(err);
+    showToast('削除失敗: ' + err.message, true); // エラー内容を表示
+  }
+}
+
+    // パスワード変更
+async function changePassword() {
+      // 1. 画面の入力値を取得
+      const currentPass = document.getElementById('pw-current').value;
+      const newPass = document.getElementById('pw-new').value;
+      const confirmPass = document.getElementById('pw-confirm').value;
+      const errEl = document.getElementById('pw-err');
+
+      // エラー表示をリセット
+      if (errEl) errEl.style.display = 'none';
+
+      // 2. バリデーション
+      if (!newPass || newPass.length < 8) {
+        showToast('新しいパスワードは8文字以上にしてください', false);
+        return;
+      }
+      if (newPass !== confirmPass) {
+        showToast('確認用パスワードが一致しません', false);
+        return;
+      }
+
+      try {
+        // 3. 【重要】supabaseClient（冒頭で定義された変数名）を使用してAuthを更新
+        // ログイン中のユーザー自身のパスワードをSupabaseのデータベース側で書き換えます
+        const { data, error } = await supabaseClient.auth.updateUser({
+          password: newPass
+        });
+
+        if (error) throw error;
+
+        // 4. 成功時の処理
+        ['pw-current', 'pw-new', 'pw-confirm'].forEach(i => {
+          const el = document.getElementById(i);
+          if (el) el.value = '';
+        });
+        
+        showToast('パスワードを更新しました');
+
+      } catch (err) {
+        console.error('Password update error:', err);
+        // エラー内容を画面に表示
+        if (errEl) {
+          errEl.textContent = '更新失敗: ' + (err.message || '通信エラー');
+          errEl.style.display = 'block';
+        }
+        showToast('更新に失敗しました', false);
+      }
+    }
+
+    // 新規ヒアリング（入力をリセットして画面を開く）
+window.newHearing = function() {
+      document.getElementById('hv-company').value = '';
+      document.getElementById('hv-contact').value = '';
+      document.getElementById('memo-text').value = '';
+      document.getElementById('memo-char').textContent = '0文字';
+      document.getElementById('keyword-hits').innerHTML = '<div class="no-hits">メモを書くと<br>関連する助成金と資料が<br>自動で表示されます</div>';
+      // チェックを全て外す
+      CHECKS.forEach(c => { const el = document.getElementById('chk-' + c.id); if (el) el.checked = false; });
+      document.getElementById('past-memo-sel').value = '';
+      window.navTo('hearing');
+      showToast('新規ヒアリングを開始します');
+    };
+
+    // ════════════════════════════════════════
+    // UTILS
+    // ════════════════════════════════════════
+    function closeModal(id) { document.getElementById(id)?.classList.remove('on'); }
+    document.querySelectorAll('.modal-bg').forEach(el => el.addEventListener('click', e => { if (e.target === el) el.classList.remove('on'); }));
+    function showToast(msg, ok = true) { const t = document.getElementById('toast'); t.textContent = msg; t.className = 'toast show ' + (ok ? 'ok' : 'ng'); setTimeout(() => t.className = 'toast', 2800); }
+    function today() { return new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }); }
+
+
+
+
+  </script>
+</body>
+
+</html>
