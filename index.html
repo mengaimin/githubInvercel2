@@ -1858,7 +1858,7 @@ async function runAiConsultant(text) {
     // 現在の助成金リストを取得
     const grantNames = window.GRANTS && window.GRANTS.length > 0 
         ? window.GRANTS.map(g => g.name).join(', ')
-        : "キャリアアップ助成金, 両立支援助成金, IT導入補助金";
+        : "キャリアアップ助成金, 両立支援助成金";
 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
 
