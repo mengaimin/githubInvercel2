@@ -1269,6 +1269,7 @@
     <div class="sb-footer">
       <div id="sb-user" style="font-weight:700;font-size:12px;color:var(--t2);">ゲスト</div>
       <div class="sb-ver">v2.0.0</div>
+      <button class="btn btn-sm btn-danger" style="width:100%;margin-top:10px;" onclick="doLogout()">🚪 ログアウト</button>
     </div>
 
     
@@ -1398,7 +1399,10 @@
           </div>
           <!-- Right: キーワード提案（固定） -->
           <div class="hearing-col sticky-col">
-            <div style="font-size:12px;font-weight:800;color:var(--t3);letter-spacing:.06em;">🔍 キーワード自動提案</div>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div style="font-size:12px;font-weight:800;color:var(--t3);letter-spacing:.06em;">🔍 キーワード自動提案</div>
+              <button class="btn btn-sm btn-primary" onclick="triggerAiSuggest()">🤖 AI提案</button>
+            </div>
             <div id="keyword-hits">
               <div class="no-hits">メモを書くと<br>関連する助成金と資料が<br>自動で表示されます</div>
             </div>
@@ -1838,16 +1842,10 @@
 
   <div class="toast" id="toast"></div>
 
-  <script type="module">
+  <script>
 
-    // ライブラリの読み込み
-import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai@0.12.0";
-
-// ここにご提示のキーを貼り付けました
-const GEMINI_API_KEY = "AIzaSyBw_7rxaeiginZmFFHh4zm8qPAfYShZ09M"; 
-const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-
-// これでAI(genAI)が使えるようになります
+    // Gemini API設定
+const GEMINI_API_KEY = "AIzaSyBkOkLyt0FBJcTMnJZ6ird4y1WQzmN4kaU"; 
 
 
 
@@ -1856,11 +1854,11 @@ async function runAiConsultant(text) {
     if (!hitsEl) return;
 
     // 現在の助成金リストを取得
-    const grantNames = window.GRANTS && window.GRANTS.length > 0 
-        ? window.GRANTS.map(g => g.name).join(', ')
+    const grantNames = typeof GRANTS !== 'undefined' && GRANTS.length > 0 
+        ? GRANTS.map(g => g.name).join(', ')
         : "キャリアアップ助成金, 両立支援助成金";
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${GEMINI_API_KEY}`;
 
     const prompt = `助成金コンサルのプロとして回答してください。
 以下のメモを分析し、JSON形式 {"suggestions": [{"name": "助成金名", "reason": "理由"}], "missing": ["不足項目1", "不足項目2"]} で出力してください。
@@ -1876,7 +1874,8 @@ async function runAiConsultant(text) {
         });
 
         const data = await response.json();
-        const rawText = data.candidates[0].content.parts[0].text;
+        const allParts = data.candidates[0].content.parts || [];
+        const rawText = allParts.map(p => p.text || '').join('\n');
         const jsonMatch = rawText.match(/\{[\s\S]*\}/);
         
         if (jsonMatch) {
@@ -1957,7 +1956,8 @@ var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZ
         // 成功
         document.getElementById('login-screen').style.display = 'none';
         console.log("ログイン成功");
-        // ここでデータの読み込み処理（loadAllData等）を呼ぶ
+        bindNav();
+        await initAppData();
       }
     } catch (err) {
       console.error(err);
@@ -1975,14 +1975,54 @@ var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZ
 
 
   // 4. ページ読み込み時の処理
-  window.addEventListener('DOMContentLoaded', function() {
+  window.addEventListener('DOMContentLoaded', async function() {
     initSupabase();
     
     var loginBtn = document.getElementById('login-exec');
     if (loginBtn) {
       loginBtn.addEventListener('click', performLogin);
     }
+    bindNav();
+
+    // ── セッション復元：既にログイン済みならログイン画面をスキップ＆データ読込 ──
+    if (supabaseClient) {
+      try {
+        var { data: { session } } = await supabaseClient.auth.getSession();
+        if (session) {
+          document.getElementById('login-screen').style.display = 'none';
+          console.log("セッション復元完了");
+          await initAppData();
+        }
+      } catch (e) {
+        console.warn("セッション確認エラー:", e);
+      }
+    }
   });
+
+    // ════════════════════════════════════════
+    // ログアウト＋ユーザー名表示
+    // ════════════════════════════════════════
+    async function doLogout() {
+      if (!confirm('ログアウトしますか？')) return;
+      try {
+        await supabaseClient.auth.signOut();
+        sessionStorage.removeItem('gn2_current_screen');
+        location.reload();
+      } catch(e) {
+        console.error(e);
+        location.reload();
+      }
+    }
+
+    async function showLoggedInUser() {
+      try {
+        var { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) return;
+        var { data: profile } = await supabaseClient.from('profiles').select('display_name').eq('id', user.id).single();
+        var name = (profile && profile.display_name) || user.email || 'ユーザー';
+        document.getElementById('sb-user').textContent = name;
+      } catch(e) { console.warn(e); }
+    }
 
     // ════════════════════════════════════════
     // LOCAL STORAGE
@@ -2027,27 +2067,171 @@ var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZ
     let msgDocs = [];
 
     // ════════════════════════════════════════
-    // INIT
+    // SUPABASE DB HELPERS（JS ↔ DB 変換）
     // ════════════════════════════════════════
-    window.onload = () => {
-      GRANTS = LS.arr('grants').length ? LS.arr('grants') : defaultGrants();
-      if (!LS.arr('grants').length) LS.set('grants', GRANTS);
-      DOCS = LS.arr('docs');
-      MEMOS = LS.arr('memos');
+    function grantToRow(g) {
+      return { name: g.name||'', summary: g.summary||'', amount: g.amount||'', fee: g.fee||'', application_period: g.period||'', detail_description: g.desc||'', application_flow: g.flow||'', notes: g.note||'', is_featured: !!g.featured, keywords: g.keywords||[] };
+    }
+    function rowToGrant(r) {
+      return { id: r.id, name: r.name||'', summary: r.summary||'', amount: r.amount||'', fee: r.fee||'', period: r.application_period||'', desc: r.detail_description||'', flow: r.application_flow||'', note: r.notes||'', featured: !!r.is_featured, keywords: r.keywords||[] };
+    }
+    function docToRow(d) {
+      return { name: d.name||'', grant_id: d.grantId||null, doc_type: d.type||'url', url: d.url||'', file_path: d.filename||'', description: d.desc||'', keywords: d.keywords||[] };
+    }
+    function rowToDoc(r) {
+      return { id: r.id, name: r.name||'', grantId: r.grant_id||'', type: r.doc_type||'url', url: r.url||'', filename: r.file_path||'', desc: r.description||'', keywords: r.keywords||[] };
+    }
+    function memoToRow(m, userId) {
+      var extra = JSON.stringify({ checkedIds: m.checkedIds||[], probability: m.probability||'', probReason: m.probReason||'' });
+      var d = m.date || today();
+      // 'YYYY/MM/DD' → 'YYYY-MM-DD'
+      var isoDate = d.replace(/\//g, '-');
+      return { user_id: userId, company_name: m.company||'', contact_person: m.contact||'', memo_text: m.text||'', handwritten_note: extra, interview_date: isoDate };
+    }
+    function rowToMemo(r) {
+      var extra = {}; try { extra = JSON.parse(r.handwritten_note||'{}'); } catch(e) {}
+      var d = r.interview_date || '';
+      if (d && d.includes('-')) d = d.replace(/-/g, '/');
+      return { id: r.id, company: r.company_name||'', contact: r.contact_person||'', text: r.memo_text||'', date: d, checkedIds: extra.checkedIds||[], probability: extra.probability||'', probReason: extra.probReason||'' };
+    }
+    function boardToRow(b, userId) {
+      return { user_id: userId, author_name: b.author||'', title: b.title||'', content: b.body||'' };
+    }
+    function rowToBoard(r) {
+      var dt = r.created_at ? new Date(r.created_at) : new Date();
+      return { id: String(r.id), title: r.title||'', body: r.content||'', author: r.author_name||'', dateTime: dt.toLocaleDateString('ja-JP',{year:'numeric',month:'2-digit',day:'2-digit'})+' '+String(dt.getHours()).padStart(2,'0')+':'+String(dt.getMinutes()).padStart(2,'0') };
+    }
+
+    // ── DB CRUD ──
+    async function dbLoadGrants() {
+      var { data, error } = await supabaseClient.from('grants').select('*');
+      if (error) { console.error('grants取得失敗:', error); return []; }
+      return (data||[]).map(rowToGrant);
+    }
+    async function dbSaveGrant(g) {
+      var row = grantToRow(g);
+      if (g.id && String(g.id).length > 20) {
+        var { error } = await supabaseClient.from('grants').update(row).eq('id', g.id);
+        if (error) throw error; return g.id;
+      } else {
+        var { data, error } = await supabaseClient.from('grants').insert(row).select('id').single();
+        if (error) throw error; return data.id;
+      }
+    }
+    async function dbDeleteGrant(id) {
+      var { error } = await supabaseClient.from('grants').delete().eq('id', id);
+      if (error) throw error;
+    }
+    async function dbLoadDocs() {
+      var { data, error } = await supabaseClient.from('documents').select('*');
+      if (error) { console.error('documents取得失敗:', error); return []; }
+      return (data||[]).map(rowToDoc);
+    }
+    async function dbSaveDoc(d) {
+      var row = docToRow(d);
+      if (!row.grant_id) row.grant_id = null;
+      if (d.id && String(d.id).length > 20) {
+        var { error } = await supabaseClient.from('documents').update(row).eq('id', d.id);
+        if (error) throw error; return d.id;
+      } else {
+        var { data, error } = await supabaseClient.from('documents').insert(row).select('id').single();
+        if (error) throw error; return data.id;
+      }
+    }
+    async function dbDeleteDoc(id) {
+      var { error } = await supabaseClient.from('documents').delete().eq('id', id);
+      if (error) throw error;
+    }
+    async function dbLoadMemos() {
+      var { data: { user } } = await supabaseClient.auth.getUser();
+      if (!user) return [];
+      var { data, error } = await supabaseClient.from('memos').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
+      if (error) { console.error('memos取得失敗:', error); return []; }
+      return (data||[]).map(rowToMemo);
+    }
+    async function dbSaveMemo(m) {
+      var { data: { user } } = await supabaseClient.auth.getUser();
+      if (!user) throw new Error('未ログイン');
+      var row = memoToRow(m, user.id);
+      if (m.id && String(m.id).length > 20) {
+        var { error } = await supabaseClient.from('memos').update(row).eq('id', m.id);
+        if (error) throw error; return m.id;
+      } else {
+        var { data, error } = await supabaseClient.from('memos').insert(row).select('id').single();
+        if (error) throw error; return data.id;
+      }
+    }
+    async function dbDeleteMemo(id) {
+      var { error } = await supabaseClient.from('memos').delete().eq('id', id);
+      if (error) throw error;
+    }
+    async function dbLoadBoard() {
+      var { data, error } = await supabaseClient.from('board_posts').select('*').order('created_at', { ascending: false });
+      if (error) { console.error('board取得失敗:', error); return []; }
+      return (data||[]).map(rowToBoard);
+    }
+    async function dbPostBoard(b) {
+      var { data: { user } } = await supabaseClient.auth.getUser();
+      if (!user) throw new Error('未ログイン');
+      var row = boardToRow(b, user.id);
+      var { data, error } = await supabaseClient.from('board_posts').insert(row).select('*').single();
+      if (error) throw error;
+      return rowToBoard(data);
+    }
+    async function dbDeleteBoard(id) {
+      var { error } = await supabaseClient.from('board_posts').delete().eq('id', parseInt(id));
+      if (error) throw error;
+    }
+
+    // ── 初期データ投入（grantsが空なら） ──
+    async function dbSeedDefaults() {
+      var defaults = defaultGrants();
+      for (var i = 0; i < defaults.length; i++) {
+        await supabaseClient.from('grants').insert(grantToRow(defaults[i]));
+      }
+    }
+
+    // ════════════════════════════════════════
+    // INIT（ログイン後にSupabaseからデータ読み込み）
+    // ════════════════════════════════════════
+    async function initAppData() {
+      try {
+        GRANTS = await dbLoadGrants();
+        if (GRANTS.length === 0) { await dbSeedDefaults(); GRANTS = await dbLoadGrants(); }
+        DOCS = await dbLoadDocs();
+        MEMOS = await dbLoadMemos();
+        BOARD = await dbLoadBoard();
+        console.log('DB読込完了: grants=' + GRANTS.length + ' docs=' + DOCS.length + ' memos=' + MEMOS.length + ' board=' + BOARD.length);
+      } catch(e) {
+        console.error('DB読み込み失敗（localStorageフォールバック）:', e);
+        GRANTS = LS.arr('grants').length ? LS.arr('grants') : defaultGrants();
+        DOCS = LS.arr('docs');
+        MEMOS = LS.arr('memos');
+        BOARD = LS.arr('board');
+      }
       CHECKS = LS.arr('checks').length ? LS.arr('checks') : defaultChecklist();
       if (!LS.arr('checks').length) LS.set('checks', CHECKS);
-      MEMBERS = LS.arr('members');
-      BOARD = LS.arr('board');
       CAL_EVENTS = LS.arr('cal_events');
+
       buildKwMaps();
-      loadHome();
       renderChecklist();
       renderCalendar();
       updatePastMemoSel();
-      // ログイン時：未読バッジ更新
       if (typeof updateBoardBadge === 'function') updateBoardBadge();
-      document.querySelectorAll('.nav-item[data-sc]').forEach(el => el.addEventListener('click', () => navTo(el.dataset.sc)));
-    };
+      if (typeof checkNewPostsAndNotify === 'function') checkNewPostsAndNotify();
+      showLoggedInUser();
+
+      var savedScreen = null;
+      try { savedScreen = sessionStorage.getItem('gn2_current_screen'); } catch(e) {}
+      if (savedScreen) { navTo(savedScreen); } else { loadHome(); }
+    }
+
+    // navイベント登録（DOM準備後に1回だけ）
+    var navBound = false;
+    function bindNav() {
+      if (navBound) return; navBound = true;
+      document.querySelectorAll('.nav-item[data-sc]').forEach(function(el) { el.addEventListener('click', function() { navTo(el.dataset.sc); }); });
+    }
 
     // ════════════════════════════════════════
     // KEYWORD MAPS
@@ -2098,6 +2282,8 @@ var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZ
       document.getElementById('s-' + id)?.classList.add('on');
       document.querySelector(`.nav-item[data-sc="${id}"]`)?.classList.add('on');
       document.getElementById('page-title').textContent = PAGE_TITLES[id] || id;
+      // ── 現在の画面をsessionStorageに保存（リロード後の復元用） ──
+      try { sessionStorage.setItem('gn2_current_screen', id); } catch(e) {}
       if (id === 'home') loadHome();
       if (id === 'memo-history') renderMemoList();
       if (id === 'grants') renderGrants();
@@ -2241,13 +2427,16 @@ window.onMemoInput = function() {
     const charEl = document.getElementById('memo-char');
     if (charEl) charEl.textContent = txt.length + '文字';
     
-    // 10文字未満ならAIは動かさない
-    if (txt.length < 10) return;
+    // キーワードマッチング（無料・API不要）は自動で実行
+    detectKwFromChecks();
+};
 
-    clearTimeout(aiSuggestTimer);
-    aiSuggestTimer = setTimeout(() => {
-        runAiConsultant(txt);
-    }, 1500); 
+// AIボタン押下時のみAPI呼び出し（1日の回数を節約）
+window.triggerAiSuggest = function() {
+    const txt = document.getElementById('memo-text').value.trim();
+    if (txt.length < 10) { showToast('メモを10文字以上入力してください', false); return; }
+    showToast('AI分析中…');
+    runAiConsultant(txt);
 };
     function detectKw(text) {
       const lower = text.toLowerCase();
@@ -2323,11 +2512,11 @@ window.saveMemo = async function() {
 
     showToast("保存と同時にAI分析を開始します...");
 
-    const API_KEY = "AIzaSyBw_7rxaeiginZmFFHh4zm8qPAfYShZ09M";
+    const API_KEY = "AIzaSyBkOkLyt0FBJcTMnJZ6ird4y1WQzmN4kaU";
 
     try {
-        // ★ここを無料枠でたっぷり使える「gemini-2.5-flash」に変更しました！
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
+        // ★ここを無料枠でたっぷり使える「gemini-2.5-flash-lite」に変更しました！
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${API_KEY}`;
 
         const prompt = `あなたはプロの助成金コンサルタントです。
 以下のヒアリングメモから、成約確度（お客様が契約してくれる可能性）を10%〜100%の間で判定してください。
@@ -2352,7 +2541,9 @@ ${text}`;
         }
 
         const data = await response.json();
-        const rawText = data.candidates[0].content.parts[0].text;
+        // 全パートからテキストを結合（思考モデル対策）
+        const allParts = data.candidates[0].content.parts || [];
+        const rawText = allParts.map(p => p.text || '').join('\n');
 
         const jsonMatch = rawText.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
@@ -2369,17 +2560,22 @@ ${text}`;
         memoData.probReason = "分析失敗: " + e.message; 
     }
 
-    // --- 保存処理 ---
+    // --- 保存処理 (Supabase) ---
     const existingIdx = MEMOS.findIndex(m => m.company === company && (m.contact || '') === contact);
     if (existingIdx >= 0) {
         memoData.id = MEMOS[existingIdx].id;
-        MEMOS[existingIdx] = memoData;
     } else {
-        MEMOS.unshift(memoData);
+        memoData.id = '';  // 新規（DBがUUID生成）
     }
 
-    localStorage.setItem('gn2_memos', JSON.stringify(MEMOS));
+    try {
+        await dbSaveMemo(memoData);
+        MEMOS = await dbLoadMemos();
+    } catch(e) {
+        console.error('DB保存失敗:', e);
+    }
     if (typeof renderMemoList === 'function') renderMemoList();
+    updatePastMemoSel();
     
     if (memoData.probability !== "エラー") {
         showToast(`AI分析完了。確度${memoData.probability}%で履歴に登録しました。`);
@@ -2390,12 +2586,11 @@ ${text}`;
     function updateMemo() {
       const id = document.getElementById('mm-id').value;
       const m = MEMOS.find(x => x.id === id); if (!m) return;
-      // 既存レコードを上書き（新規追加しない）
       m.company = document.getElementById('mm-company').value.trim();
       m.contact = document.getElementById('mm-contact').value.trim();
       m.text = document.getElementById('mm-text').value;
       m.date = today();
-      LS.set('memos', MEMOS);
+      // DB保存はwindow.updateMemo（async版）で実施
       updatePastMemoSel();
       renderMemoList();
       closeModal('memo-modal');
@@ -2537,15 +2732,17 @@ function loadPastMemo() {
     };
 
     // 「更新」ボタン
-    window.updateMemo = function() {
+    window.updateMemo = async function() {
         const id = document.getElementById('mm-id').value;
         const m = MEMOS.find(x => x.id === id); if (!m) return;
-        // 既存レコードを上書き（新規追加しない）
         m.company = document.getElementById('mm-company').value.trim();
         m.contact = document.getElementById('mm-contact').value.trim();
         m.text = document.getElementById('mm-text').value;
         m.date = today();
-        LS.set('memos', MEMOS);
+        try {
+          await dbSaveMemo(m);
+          MEMOS = await dbLoadMemos();
+        } catch(e) { console.error(e); }
         updatePastMemoSel();
         renderMemoList();
         closeModal('memo-modal');
@@ -2573,9 +2770,13 @@ function loadPastMemo() {
     };
 
     // 「削除」ボタン
-    window.deleteMemo = function(id) {
+    window.deleteMemo = async function(id) {
         if (!confirm('このメモを削除しますか？')) return;
-        MEMOS = MEMOS.filter(m => m.id !== id); LS.set('memos', MEMOS); renderMemoList(); showToast('削除しました');
+        try {
+          await dbDeleteMemo(id);
+          MEMOS = await dbLoadMemos();
+          renderMemoList(); updatePastMemoSel(); showToast('削除しました');
+        } catch(e) { console.error(e); showToast('削除失敗: ' + e.message, false); }
     };
 
     // 「PDF出力」ボタン（モーダル内）
@@ -2620,8 +2821,6 @@ function loadPastMemo() {
 }
 function showGrantDetail(gid) {
       const g = GRANTS.find(x => x.id === gid); if (!g) return;
-      // DOCSを最新状態から取得（保存直後でも確実に表示）
-      DOCS = LS.arr('docs');
       const relDocs = DOCS.filter(d => d.grantId && d.grantId === gid);
       const flowSteps = (g.flow || '').split('\n').filter(s => s.trim());
       document.getElementById('grant-detail-body').innerHTML = `
@@ -2694,16 +2893,23 @@ function showGrantDetail(gid) {
 }
     function addGmKw() { const v = document.getElementById('gm-kw-inp').value.trim(); if (!v || gmKws.includes(v)) return; gmKws.push(v); document.getElementById('gm-kw-inp').value = ''; renderGmKwTags(); }
     function renderGmKwTags() { document.getElementById('gm-kw-tags').innerHTML = gmKws.map((k, i) => `<span class="tag">${k}<span class="del-tag" onclick="gmKws.splice(${i},1);renderGmKwTags()">×</span></span>`).join(''); }
-    function saveGrant() {
+    async function saveGrant() {
       const name = document.getElementById('gm-name').value.trim(); if (!name) { showToast('助成金名を入力してください', false); return; }
       const id = document.getElementById('gm-id').value;
-      const g = { id: id || 'g' + Date.now(), name, cat: document.getElementById('gm-cat').value, summary: document.getElementById('gm-summary').value.trim(), amount: document.getElementById('gm-amount').value.trim(), fee: document.getElementById('gm-fee').value.trim(), period: document.getElementById('gm-period').value.trim(), desc: document.getElementById('gm-desc').value.trim(), flow: document.getElementById('gm-flow').value.trim(), note: document.getElementById('gm-note').value.trim(), featured: document.getElementById('gm-featured').checked, keywords: [...gmKws] };
-      if (id) { const i = GRANTS.findIndex(x => x.id === id); if (i >= 0) GRANTS[i] = g; } else GRANTS.push(g);
-      LS.set('grants', GRANTS); buildKwMaps(); closeModal('grant-modal'); renderGrants(currentGrantCat); loadHome(); showToast('保存しました');
+      const g = { id: id, name, summary: document.getElementById('gm-summary').value.trim(), amount: document.getElementById('gm-amount').value.trim(), fee: document.getElementById('gm-fee').value.trim(), period: document.getElementById('gm-period').value.trim(), desc: document.getElementById('gm-desc').value.trim(), flow: document.getElementById('gm-flow').value.trim(), note: document.getElementById('gm-note').value.trim(), featured: document.getElementById('gm-featured').checked, keywords: [...gmKws] };
+      try {
+        await dbSaveGrant(g);
+        GRANTS = await dbLoadGrants();
+        buildKwMaps(); closeModal('grant-modal'); renderGrants(currentGrantCat); loadHome(); showToast('保存しました');
+      } catch(e) { console.error(e); showToast('保存失敗: ' + e.message, false); }
     }
-    function deleteGrant(id) {
+    async function deleteGrant(id) {
       if (!confirm('この助成金コースを削除しますか？')) return;
-      GRANTS = GRANTS.filter(g => g.id !== id); LS.set('grants', GRANTS); buildKwMaps(); navTo('grants'); showToast('削除しました');
+      try {
+        await dbDeleteGrant(id);
+        GRANTS = await dbLoadGrants();
+        buildKwMaps(); navTo('grants'); showToast('削除しました');
+      } catch(e) { console.error(e); showToast('削除失敗: ' + e.message, false); }
     }
 
     // ════════════════════════════════════════
@@ -2738,9 +2944,13 @@ function showGrantDetail(gid) {
       else if (d.filename) showToast('ファイル名: ' + d.filename + ' — Supabase設定後にアップロードできます');
       else showToast('URLまたはファイルが未設定です', false);
     }
-    function deleteDoc(id) {
+    async function deleteDoc(id) {
       if (!confirm('この資料を削除しますか？')) return;
-      DOCS = DOCS.filter(d => d.id !== id); LS.set('docs', DOCS); buildKwMaps(); renderDocs(); loadHome(); showToast('削除しました');
+      try {
+        await dbDeleteDoc(id);
+        DOCS = await dbLoadDocs();
+        buildKwMaps(); renderDocs(); loadHome(); showToast('削除しました');
+      } catch(e) { console.error(e); showToast('削除失敗: ' + e.message, false); }
     }
 
     // ── Doc Modal ──
@@ -2749,19 +2959,17 @@ function openDocModal(editId = '', defaultGrantId = '') {
   document.getElementById('dm-id').value = editId;
   document.getElementById('dm-title').textContent = editId ? '📁 資料を編集' : '📁 資料を追加';
   
-  // ↓ dm-grant 要素を消した場合は、この innerHTML 操作ごと削除
-  // const grantSel = document.getElementById('dm-grant');
-  // if(grantSel) grantSel.innerHTML = '...'; 
+  // 助成金ドロップダウンを動的に生成
+  const grantSel = document.getElementById('dm-grant');
+  if (grantSel) {
+    grantSel.innerHTML = '<option value="">なし（汎用資料）</option>' + GRANTS.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
+  }
 
   if (editId) {
     const d = DOCS.find(x => x.id === editId);
     if (d) {
       document.getElementById('dm-name').value = d.name;
-      
-      // ↓ 削除した要素へのアクセスを消す
-      // document.getElementById('dm-cat').value = d.cat || '';
-      // document.getElementById('dm-grant').value = d.grantId || '';
-      
+      if (grantSel) grantSel.value = d.grantId || '';
       document.getElementById('dm-url').value = d.url || '';
       document.getElementById('dm-filename').value = d.filename || '';
       document.getElementById('dm-desc').value = d.desc || '';
@@ -2773,7 +2981,8 @@ function openDocModal(editId = '', defaultGrantId = '') {
       const el = document.getElementById(i);
       if(el) el.value = '';
     });
-    // document.getElementById('dm-cat').value = ''; // 削除
+    // defaultGrantIdが渡されていれば選択
+    if (grantSel) grantSel.value = defaultGrantId || '';
     selDocType(null, 'url');
   }
   renderDmKwTags();
@@ -2789,27 +2998,30 @@ function openDocModal(editId = '', defaultGrantId = '') {
     }
     function addDmKw() { const v = document.getElementById('dm-kw-inp').value.trim(); if (!v || dmKws.includes(v)) return; dmKws.push(v); document.getElementById('dm-kw-inp').value = ''; renderDmKwTags(); }
     function renderDmKwTags() { document.getElementById('dm-kw-tags').innerHTML = dmKws.map((k, i) => `<span class="tag">${k}<span class="del-tag" onclick="dmKws.splice(${i},1);renderDmKwTags()">×</span></span>`).join(''); }
-    function saveDoc() {
+    async function saveDoc() {
   const name = document.getElementById('dm-name').value.trim();
   if (!name) { showToast('資料名を入力してください', false); return; }
   const id = document.getElementById('dm-id').value;
   const type = document.getElementById('dm-type').value;
+  const grantIdVal = document.getElementById('dm-grant')?.value || '';
 
-  // dm-grant を削除したなら、以下のように固定値にするか、取得を止める
   const d = {
-    id: id || 'd' + Date.now(),
+    id: id,
     name: name,
     type: type,
+    grantId: grantIdVal,
     url: document.getElementById('dm-url').value.trim(),
     filename: document.getElementById('dm-filename').value.trim(),
     desc: document.getElementById('dm-desc').value.trim(),
     keywords: [...dmKws]
   };
-      if (id) { const i = DOCS.findIndex(x => x.id === id); if (i >= 0) DOCS[i] = d; } else DOCS.unshift(d);
-      LS.set('docs', DOCS); buildKwMaps(); closeModal('doc-modal'); renderDocs(); loadHome();
-      // 関連助成金詳細が開いていれば再描画
-      if (grantIdVal && document.getElementById('s-grant-detail')?.classList.contains('on')) showGrantDetail(grantIdVal);
-      showToast('保存しました');
+      try {
+        await dbSaveDoc(d);
+        DOCS = await dbLoadDocs();
+        buildKwMaps(); closeModal('doc-modal'); renderDocs(); loadHome();
+        if (grantIdVal && document.getElementById('s-grant-detail')?.classList.contains('on')) showGrantDetail(grantIdVal);
+        showToast('保存しました');
+      } catch(e) { console.error(e); showToast('保存失敗: ' + e.message, false); }
     }
 
     // ════════════════════════════════════════
@@ -2875,32 +3087,29 @@ function openDocModal(editId = '', defaultGrantId = '') {
   };
 
   // 新規投稿処理
-  window.postBoard = function() {
+  window.postBoard = async function() {
     var titleEl = document.getElementById('board-title');
     var bodyEl = document.getElementById('board-body');
     var title = titleEl.value.trim();
     var body = bodyEl.value.trim();
     if (!title || !body) { showToast('タイトルと内容を入力してください', false); return; }
 
-    var now = new Date();
-    var dateTime = now.toLocaleDateString('ja-JP',{year:'numeric',month:'2-digit',day:'2-digit'}) + ' '
-      + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
-    var newId = 'b' + Date.now();
+    try {
+      var posted = await dbPostBoard({ title: title, body: body, author: '自分' });
+      BOARD = await dbLoadBoard();
+      // 自分の投稿は既読にする
+      var readIds = LS.arr('board_read_ids');
+      readIds.push(posted.id);
+      LS.set('board_read_ids', readIds);
 
-    BOARD.unshift({ id: newId, title: title, body: body, dateTime: dateTime, author: '自分' });
-    LS.set('board', BOARD);
-    // 自分の投稿は既読にする
-    var readIds = LS.arr('board_read_ids');
-    readIds.push(newId);
-    LS.set('board_read_ids', readIds);
+      var shortTitle = title.length > 10 ? title.substring(0, 10) + '...' : title;
+      if (typeof window.startNotification === 'function') window.startNotification('【' + shortTitle + '】 ' + body);
 
-    var shortTitle = title.length > 10 ? title.substring(0, 10) + '...' : title;
-    if (typeof window.startNotification === 'function') window.startNotification('【' + shortTitle + '】 ' + body);
-
-    titleEl.value = ''; bodyEl.value = '';
-    renderBoard();
-    updateBoardBadge();
-    showToast('投稿しました');
+      titleEl.value = ''; bodyEl.value = '';
+      renderBoard();
+      updateBoardBadge();
+      showToast('投稿しました');
+    } catch(e) { console.error(e); showToast('投稿失敗: ' + e.message, false); }
   };
 
   // 掲示板の表示
@@ -2983,12 +3192,15 @@ function openDocModal(editId = '', defaultGrantId = '') {
   };
 
   // 投稿削除
-  window.deleteBoard = function(id) {
+  window.deleteBoard = async function(id) {
     if (!confirm('削除しますか？')) return;
-    BOARD = BOARD.filter(function(b) { return b.id !== id; });
-    LS.set('board', BOARD);
-    renderBoard();
-    updateBoardBadge();
+    try {
+      await dbDeleteBoard(id);
+      BOARD = await dbLoadBoard();
+      renderBoard();
+      updateBoardBadge();
+      showToast('削除しました');
+    } catch(e) { console.error(e); showToast('削除失敗: ' + e.message, false); }
   };
 
 
@@ -3129,6 +3341,19 @@ window.saveCalEvent = function() {
   closeModal('cal-event-modal'); 
   renderCalendar();
   showToast('予定を追加しました');
+
+  // Googleカレンダーに登録するか確認
+  if (confirm('Googleカレンダーにも登録しますか？')) {
+    var dateStr = e.date.replace(/-/g, '');
+    var timeStr = (e.time || '10:00').replace(':', '') + '00';
+    var endH = parseInt(e.time || '10') + 1;
+    var endTime = ('0' + endH).slice(-2) + (e.time || '10:00').slice(2) + '00';
+    var gcalUrl = 'https://calendar.google.com/calendar/r/eventedit'
+      + '?text=' + encodeURIComponent(e.title)
+      + '&dates=' + dateStr + 'T' + timeStr + '/' + dateStr + 'T' + endTime.replace(':', '') 
+      + '&details=' + encodeURIComponent(e.note || '');
+    window.open(gcalUrl, '_blank');
+  }
 };
 
 window.deleteCalEvent = function() {
@@ -3203,8 +3428,8 @@ window.deleteCalEvent = function() {
           .then(() => { showToast('送信完了 — ' + to + ' に送信しました'); })
           .catch(() => { showToast('自動送信に失敗しました', false); });
       } else {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
-        window.open(url, '_blank');
+        const gmailUrl = `https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(to)}&su=${encodeURIComponent(subj)}&body=${encodeURIComponent(fullBody)}`;
+        window.open(gmailUrl, '_blank');
         showToast('Gmailで送信してください（EmailJS設定後は自動送信）');
       }
 
