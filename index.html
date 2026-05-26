@@ -1479,6 +1479,22 @@
           <div class="form-group">
             <div class="form-label">内容<span class="req">*</span></div><textarea class="ftxt" id="board-body" placeholder="全員に共有したい内容を入力してください…" style="min-height:100px;"></textarea>
           </div>
+          <!-- 助成金情報を添付 -->
+          <div style="margin-top:10px;">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--blue);font-weight:600;">
+              <input type="checkbox" id="board-attach-grant" onchange="toggleBoardGrant(this.checked)" style="width:16px;height:16px;accent-color:var(--blue);">
+              💰 助成金情報を添付して共有する
+            </label>
+          </div>
+          <div id="board-grant-fields" style="display:none;margin-top:12px;padding:14px;background:var(--blue-bg);border-radius:var(--r);border:1px solid var(--blue2);">
+            <div style="font-size:12px;font-weight:700;color:var(--blue);margin-bottom:10px;">添付する助成金情報（他メンバーが取り込み可能）</div>
+            <div class="g2" style="gap:10px;">
+              <div class="form-group" style="margin-bottom:0;"><div class="form-label">助成金名<span class="req">*</span></div><input class="finp" id="bg-name" placeholder="〇〇助成金"></div>
+              <div class="form-group" style="margin-bottom:0;"><div class="form-label">助成金額</div><input class="finp" id="bg-amount" placeholder="最大〇万円"></div>
+            </div>
+            <div class="form-group" style="margin-top:8px;"><div class="form-label">概要</div><input class="finp" id="bg-summary" placeholder="一言で説明"></div>
+            <div class="form-group"><div class="form-label">申請の流れ（改行区切り）</div><textarea class="ftxt" id="bg-flow" placeholder="① 〇〇を準備\n② △△を申請\n③ 審査後受給" style="min-height:70px;"></textarea></div>
+          </div>
           <div class="btn-row" style="margin-top:10px;">
             <button class="btn btn-primary" onclick="postBoard()">📤 投稿・通知する</button>
           </div>
@@ -2075,11 +2091,11 @@ var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZ
     function rowToGrant(r) {
       return { id: r.id, name: r.name||'', summary: r.summary||'', amount: r.amount||'', fee: r.fee||'', period: r.application_period||'', desc: r.detail_description||'', flow: r.application_flow||'', note: r.notes||'', featured: !!r.is_featured, keywords: r.keywords||[] };
     }
-    function docToRow(d) {
-      return { name: d.name||'', grant_id: d.grantId||null, doc_type: d.type||'url', url: d.url||'', file_path: d.filename||'', description: d.desc||'', keywords: d.keywords||[] };
+    function docToRow(d, userId) {
+      return { user_id: userId||null, name: d.name||'', grant_id: d.grantId||null, doc_type: d.type||'url', url: d.url||'', file_path: d.filename||'', description: d.desc||'', keywords: d.keywords||[] };
     }
     function rowToDoc(r) {
-      return { id: r.id, name: r.name||'', grantId: r.grant_id||'', type: r.doc_type||'url', url: r.url||'', filename: r.file_path||'', desc: r.description||'', keywords: r.keywords||[] };
+      return { id: r.id, name: r.name||'', grantId: r.grant_id||'', type: r.doc_type||'url', url: r.url||'', filename: r.file_path||'', desc: r.description||'', keywords: r.keywords||[], userId: r.user_id||'' };
     }
     function memoToRow(m, userId) {
       var extra = JSON.stringify({ checkedIds: m.checkedIds||[], probability: m.probability||'', probReason: m.probReason||'' });
@@ -2123,12 +2139,16 @@ var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZ
       if (error) throw error;
     }
     async function dbLoadDocs() {
-      var { data, error } = await supabaseClient.from('documents').select('*');
+      var { data: { user } } = await supabaseClient.auth.getUser();
+      if (!user) return [];
+      var { data, error } = await supabaseClient.from('documents').select('*').eq('user_id', user.id);
       if (error) { console.error('documents取得失敗:', error); return []; }
       return (data||[]).map(rowToDoc);
     }
     async function dbSaveDoc(d) {
-      var row = docToRow(d);
+      var { data: { user } } = await supabaseClient.auth.getUser();
+      if (!user) throw new Error('未ログイン');
+      var row = docToRow(d, user.id);
       if (!row.grant_id) row.grant_id = null;
       if (d.id && String(d.id).length > 20) {
         var { error } = await supabaseClient.from('documents').update(row).eq('id', d.id);
@@ -3087,6 +3107,11 @@ function openDocModal(editId = '', defaultGrantId = '') {
   };
 
   // 新規投稿処理
+  // 助成金添付フィールド表示切替
+  window.toggleBoardGrant = function(show) {
+    document.getElementById('board-grant-fields').style.display = show ? '' : 'none';
+  };
+
   window.postBoard = async function() {
     var titleEl = document.getElementById('board-title');
     var bodyEl = document.getElementById('board-body');
@@ -3094,18 +3119,33 @@ function openDocModal(editId = '', defaultGrantId = '') {
     var body = bodyEl.value.trim();
     if (!title || !body) { showToast('タイトルと内容を入力してください', false); return; }
 
+    // 助成金情報が添付されている場合、bodyにJSON埋め込み
+    var attachGrant = document.getElementById('board-attach-grant');
+    if (attachGrant && attachGrant.checked) {
+      var gName = document.getElementById('bg-name').value.trim();
+      if (!gName) { showToast('助成金名を入力してください', false); return; }
+      var gData = {
+        name: gName,
+        amount: document.getElementById('bg-amount').value.trim(),
+        summary: document.getElementById('bg-summary').value.trim(),
+        flow: document.getElementById('bg-flow').value.trim()
+      };
+      body = body + '\n__GRANT__' + JSON.stringify(gData);
+    }
+
     try {
       var posted = await dbPostBoard({ title: title, body: body, author: '自分' });
       BOARD = await dbLoadBoard();
-      // 自分の投稿は既読にする
       var readIds = LS.arr('board_read_ids');
       readIds.push(posted.id);
       LS.set('board_read_ids', readIds);
 
       var shortTitle = title.length > 10 ? title.substring(0, 10) + '...' : title;
-      if (typeof window.startNotification === 'function') window.startNotification('【' + shortTitle + '】 ' + body);
+      if (typeof window.startNotification === 'function') window.startNotification('【' + shortTitle + '】 ' + body.split('\n__GRANT__')[0]);
 
       titleEl.value = ''; bodyEl.value = '';
+      if (attachGrant) { attachGrant.checked = false; toggleBoardGrant(false); }
+      ['bg-name','bg-amount','bg-summary','bg-flow'].forEach(function(id) { var el = document.getElementById(id); if(el) el.value = ''; });
       renderBoard();
       updateBoardBadge();
       showToast('投稿しました');
@@ -3124,6 +3164,16 @@ function openDocModal(editId = '', defaultGrantId = '') {
     for (var i = 0; i < BOARD.length; i++) {
       var p = BOARD[i];
       var isUnread = readIds.indexOf(p.id) === -1;
+
+      // 助成金データを分離
+      var bodyText = p.body || '';
+      var grantData = null;
+      if (bodyText.indexOf('__GRANT__') !== -1) {
+        var parts = bodyText.split('\n__GRANT__');
+        bodyText = parts[0];
+        try { grantData = JSON.parse(parts[1]); } catch(e) {}
+      }
+
       html += '<div class="board-post" id="bpost-' + p.id + '" style="' + (isUnread ? 'border-color:var(--red);' : '') + '">';
       html += '<div class="board-post-header"><div>';
       html += '<div style="font-size:15px;font-weight:800;margin-bottom:4px;">';
@@ -3133,7 +3183,30 @@ function openDocModal(editId = '', defaultGrantId = '') {
       html += '<div style="display:flex;gap:5px;">';
       if (isUnread) html += '<button class="btn btn-xs btn-success" onclick="markBoardRead(\'' + p.id + '\')">✓ 確認</button>';
       html += '<button class="btn btn-xs btn-danger" onclick="deleteBoard(\'' + p.id + '\')">削除</button></div></div>';
-      html += '<div class="board-post-body">' + p.body + '</div></div>';
+      html += '<div class="board-post-body">' + bodyText + '</div>';
+
+      // 助成金カード表示
+      if (grantData) {
+        var safeJson = JSON.stringify(grantData).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        html += '<div style="margin-top:12px;padding:14px;background:var(--blue-bg);border:1.5px solid var(--blue2);border-radius:var(--rl);">';
+        html += '<div style="font-size:12px;font-weight:700;color:var(--blue);margin-bottom:8px;">💰 添付された助成金情報</div>';
+        html += '<div style="font-size:15px;font-weight:800;margin-bottom:4px;">' + (grantData.name||'') + '</div>';
+        if (grantData.amount) html += '<div style="font-size:13px;color:var(--amber);font-weight:700;margin-bottom:4px;">' + grantData.amount + '</div>';
+        if (grantData.summary) html += '<div style="font-size:12px;color:var(--t2);margin-bottom:8px;">' + grantData.summary + '</div>';
+        if (grantData.flow) {
+          var steps = grantData.flow.split('\n').filter(function(s){return s.trim();});
+          if (steps.length) {
+            html += '<div style="font-size:11px;color:var(--t3);margin-bottom:4px;">申請の流れ：</div>';
+            html += '<div style="font-size:12px;color:var(--t2);line-height:1.7;">' + steps.join('<br>') + '</div>';
+          }
+        }
+        html += '<div style="margin-top:10px;display:flex;gap:8px;">';
+        html += '<button class="btn btn-sm btn-primary" onclick="importGrantFromBoard(\'' + safeJson + '\')">📥 助成金として取り込む</button>';
+        html += '<button class="btn btn-sm" onclick="importDocFromBoard(\'' + safeJson + '\')">📁 自分の資料に保存</button>';
+        html += '</div></div>';
+      }
+
+      html += '</div>';
     }
     listEl.innerHTML = html;
     updateBoardBadge();
@@ -3201,6 +3274,67 @@ function openDocModal(editId = '', defaultGrantId = '') {
       updateBoardBadge();
       showToast('削除しました');
     } catch(e) { console.error(e); showToast('削除失敗: ' + e.message, false); }
+  };
+
+  // ── 掲示板から助成金を取り込む ──
+  window.importGrantFromBoard = async function(jsonStr) {
+    try {
+      var g = JSON.parse(jsonStr.replace(/&quot;/g, '"'));
+      if (!g.name) { showToast('助成金名がありません', false); return; }
+      // 重複チェック
+      if (GRANTS.some(function(x) { return x.name === g.name; })) {
+        showToast('この助成金は既に登録されています', false); return;
+      }
+      var newGrant = {
+        id: '', name: g.name, summary: g.summary || '', amount: g.amount || '',
+        fee: '助成金額の30%（最低15万円/人）', period: '', desc: g.summary || '',
+        flow: g.flow || '', note: '', featured: false, keywords: []
+      };
+      await dbSaveGrant(newGrant);
+      GRANTS = await dbLoadGrants();
+      buildKwMaps(); loadHome();
+      showToast('「' + g.name + '」を助成金一覧に追加しました！');
+    } catch(e) { console.error(e); showToast('取り込み失敗: ' + e.message, false); }
+  };
+
+  // ── 掲示板から自分の資料に保存 ──
+  window.importDocFromBoard = async function(jsonStr) {
+    try {
+      var g = JSON.parse(jsonStr.replace(/&quot;/g, '"'));
+      var newDoc = {
+        id: '', name: (g.name || '掲示板から取込') + ' 参考資料',
+        type: 'other', grantId: '', url: '', filename: '',
+        desc: (g.summary || '') + (g.flow ? '\n\n【申請の流れ】\n' + g.flow : ''),
+        keywords: []
+      };
+      await dbSaveDoc(newDoc);
+      DOCS = await dbLoadDocs();
+      buildKwMaps(); renderDocs(); loadHome();
+      showToast('自分の資料ライブラリに保存しました！');
+    } catch(e) { console.error(e); showToast('保存失敗: ' + e.message, false); }
+  };
+
+  // ── DB移行：documentsテーブルにuser_idカラムを追加 ──
+  window.migrateDocsUserColumn = async function() {
+    if (!confirm('documentsテーブルにuser_idカラムを追加します。\n（既に追加済みの場合は何も起きません）\n\n実行しますか？')) return;
+    showToast('移行中…');
+    try {
+      // user_idカラムがなければ追加（RPC経由でSQLを実行）
+      await supabaseClient.rpc('exec_sql', { sql_text: "ALTER TABLE documents ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id);" });
+      // RLS更新
+      await supabaseClient.rpc('exec_sql', { sql_text: "DROP POLICY IF EXISTS \"Allow select for authenticated\" ON documents;" });
+      await supabaseClient.rpc('exec_sql', { sql_text: "DROP POLICY IF EXISTS \"Allow manage for authenticated\" ON documents;" });
+      await supabaseClient.rpc('exec_sql', { sql_text: "CREATE POLICY \"Users manage own docs\" ON documents FOR ALL TO authenticated USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);" });
+      showToast('移行完了！');
+    } catch(e) {
+      console.error(e);
+      showToast('自動移行に失敗しました。以下のSQLをSupabaseで実行してください。', false);
+      alert('以下のSQLをSupabase SQL Editorで実行してください：\n\n' +
+        'ALTER TABLE documents ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id);\n\n' +
+        'DROP POLICY IF EXISTS "Allow select for authenticated" ON documents;\n' +
+        'DROP POLICY IF EXISTS "Allow manage for authenticated" ON documents;\n' +
+        'CREATE POLICY "Users manage own docs" ON documents FOR ALL TO authenticated USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);');
+    }
   };
 
 
