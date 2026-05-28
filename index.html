@@ -1594,6 +1594,21 @@
             <tbody id="admin-members"></tbody>
           </table>
         </div>
+        <!-- データ管理 -->
+        <div class="card mb18" style="margin-top:20px;border-color:var(--amber);background:var(--amber-bg);">
+          <div style="font-size:14px;font-weight:800;margin-bottom:10px;">⚙️ データ管理</div>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px;">
+            <button class="btn btn-sm btn-danger" onclick="reseedGrants()">🔄 助成金リセット＆再登録（19件）</button>
+          </div>
+          <div style="padding-top:14px;border-top:1px solid var(--amber);">
+            <div style="font-size:13px;font-weight:700;margin-bottom:8px;">🔧 DB初期設定（初回のみ必要）</div>
+            <div style="font-size:11px;color:var(--t2);margin-bottom:8px;">
+              資料の個人管理を有効にするSQLです。Supabaseダッシュボード → SQL Editor で実行してください。<br>
+              ※ Chromeシークレットモード（Ctrl+Shift+N）で開くと翻訳エラーを回避できます。
+            </div>
+            <button class="btn btn-sm btn-primary" onclick="showMigrationSQL()">📋 SQLをコピー</button>
+          </div>
+        </div>
       </div>
 
       <!-- ══ PASSWORD ══ -->
@@ -1860,8 +1875,45 @@
 
   <script>
 
-    // Gemini API設定
-const GEMINI_API_KEY = "AIzaSyBkOkLyt0FBJcTMnJZ6ird4y1WQzmN4kaU"; 
+export default async function handler(req, res) {
+  // CORS
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
+
+  const GEMINI_KEY = process.env.GEMINI_API_KEY;
+  if (!GEMINI_KEY) return res.status(500).json({ error: 'GEMINI_API_KEY not set' });
+
+  try {
+    const { prompt } = req.body;
+    if (!prompt) return res.status(400).json({ error: 'prompt required' });
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${GEMINI_KEY}`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      return res.status(response.status).json({ error: data.error?.message || 'Gemini API error' });
+    }
+
+    const parts = data.candidates?.[0]?.content?.parts || [];
+    const text = parts.map(p => p.text || '').join('\n');
+    const match = text.match(/\{[\s\S]*\}/);
+
+    return res.status(200).json({
+      text,
+      json: match ? JSON.parse(match[0]) : null
+    });
+  } catch (e) {
+    return res.status(500).json({ error: e.message });
+  }
+}
 
 
 
@@ -2053,10 +2105,27 @@ var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZ
     // DEFAULT DATA
     // ════════════════════════════════════════
     function defaultGrants() {
+      var FEE = '助成金額の30%（最低15万円/人）';
       return [
-        { id: 'g1', name: 'キャリアアップ助成金（正社員化コース）', summary: '有期雇用・パートを正社員に転換した際に支給される助成金', amount: '最大80万円/人', fee: '助成金額の20%', period: '転換後6ヶ月経過後に申請。転換日から2年以内', desc: '有期雇用労働者・パートタイマー等を正規雇用へ転換した事業主に支給。就業規則への転換規定記載が必須。', flow: '就業規則に転換規定を記載\n転換対象者を選定（有期雇用6ヶ月以上）\n正社員として転換・雇用\n転換後6ヶ月分の賃金支払い\n支給申請書を労働局に提出', note: '就業規則は必ず届出済みであること。転換前に申請不可。', keywords: ['正社員化', 'パート転換', '有期雇用', 'キャリアアップ', '正社員', '転換'], featured: true },
-        { id: 'g2', name: '両立支援等助成金（出生時両立支援コース）', summary: '男性の育児休業取得を推進した事業主に支給される助成金', amount: '最大57万円', fee: '助成金額の20%', period: '育休取得後に申請。開始前から環境整備が必要', desc: '男性労働者が育休を取得しやすい職場環境を整備し、実際に取得させた事業主への支援。', flow: '行動計画の策定・周知\n育休推進のための環境整備\n男性従業員が育休取得（連続14日以上等）\n育休終了後2ヶ月以内に申請', note: '育休開始前に申請手続きが必要。行動計画の作成・周知が条件。', keywords: ['男性育休', '育児休業', '出生時', '両立支援', 'パタニティ', '育休'], featured: true },
-        { id: 'g3', name: 'IT導入補助金（デジタル化基盤導入枠）', summary: '中小企業のITツール（会計・受発注・決済等）導入を支援する補助金', amount: '最大350万円', fee: '補助金額の15%', period: '公募期間内に申請。採択後にツール導入・実績報告', desc: 'IT導入支援事業者が提供するITツール導入費の補助。会計・受発注・決済・ECサイト等が対象。', flow: 'IT導入支援事業者を選定\n導入ITツールを決定\n公募期間内に交付申請\n採択後にツール導入・支払い\n実績報告・補助金受取', note: '公募期間・スケジュールに要注意。採択競争あり。', keywords: ['IT導入', 'デジタル化', 'システム', 'DX', 'クラウド', 'SaaS'], featured: true }
+        { id:'g01', name:'キャリアアップ助成金（正社員化コース）', summary:'有期雇用・パートを正社員に転換した際に支給。重点支援対象者なら1人最大80万円', amount:'最大80万円/人', fee:FEE, period:'転換後6ヶ月の賃金支払い後、2ヶ月以内に申請', desc:'有期雇用労働者（6ヶ月以上雇用）を正規雇用へ転換した事業主に支給。重点支援対象者は80万円、それ以外は有期→正規40万円。1年度20人まで。', flow:'① キャリアアップ計画書を労働局に提出（転換前に必須）\n② 就業規則に転換規定を明記し労基署へ届出\n③ 転換対象者を選定（有期雇用6ヶ月以上）\n④ 正社員として雇用契約を締結・転換\n⑤ 転換後6ヶ月分の賃金を支払う（3%以上賃金増額）\n⑥ 6ヶ月経過後、2ヶ月以内に支給申請書を労働局へ提出\n⑦ 審査後、助成金が振り込まれる（約3〜6ヶ月）', note:'転換前にキャリアアップ計画の届出が必須。届出前の転換は対象外。3%以上の賃金増額が必要。', keywords:['正社員化','パート転換','有期雇用','キャリアアップ','正社員','転換','契約社員','非正規'], featured:true },
+        { id:'g02', name:'キャリアアップ助成金（障害者正社員化コース）', summary:'障害のある有期雇用労働者を正規雇用に転換した場合に支給', amount:'最大120万円/人', fee:FEE, period:'転換後6ヶ月経過後に申請', desc:'障害のある有期雇用労働者を正規雇用に転換した事業主に支給。重度身体・重度知的・精神障害者は最大120万円。', flow:'① キャリアアップ計画書を労働局に提出\n② 就業規則に転換規定を整備\n③ 対象の障害者を正規雇用に転換\n④ 転換後6ヶ月分の賃金を支払う\n⑤ 支給申請書を労働局に提出', note:'障害者手帳等の確認書類が必要。', keywords:['障害者','障害者雇用','正社員化','障害者正社員'], featured:false },
+        { id:'g03', name:'キャリアアップ助成金（賃金規定等改定コース）', summary:'有期雇用労働者の基本給を3%以上増額改定した場合に支給', amount:'最大6.5万円/人', fee:FEE, period:'賃金規定改定後6ヶ月経過後に申請', desc:'有期雇用労働者等の基本給の賃金規定を3%以上増額改定し適用した場合に支給。1年度100人まで。', flow:'① キャリアアップ計画書を労働局に提出\n② 賃金規定（就業規則・賃金表）を改定\n③ 改定後の賃金規定を6ヶ月以上適用\n④ 6ヶ月経過後に支給申請', note:'基本給の増額が対象。諸手当の新設・増額は含まない。', keywords:['賃金アップ','賃上げ','基本給','賃金規定','昇給'], featured:false },
+        { id:'g04', name:'キャリアアップ助成金（賞与・退職金制度導入コース）', summary:'有期雇用労働者に賞与・退職金制度を新たに導入し支給した場合', amount:'最大56.8万円/事業所', fee:FEE, period:'制度適用後6ヶ月経過後に申請', desc:'賞与制度のみ40万円、退職金制度のみ16.8万円、両方同時は56.8万円。1事業所1回限り。', flow:'① キャリアアップ計画書を労働局に提出\n② 就業規則に賞与・退職金規定を新設\n③ 対象労働者に実際に賞与支給 or 退職金積立を開始\n④ 制度適用後6ヶ月経過後に支給申請', note:'既に制度がある場合は対象外。新規導入のみ。', keywords:['賞与','退職金','ボーナス','制度導入','福利厚生'], featured:false },
+        { id:'g05', name:'キャリアアップ助成金（短時間労働者労働時間延長支援コース）', summary:'短時間労働者の所定労働時間を延長し社会保険に加入させた場合に支給', amount:'最大75万円/人', fee:FEE, period:'労働時間延長後6ヶ月経過後に申請', desc:'年収の壁対応として活用可能。小規模企業（100人以下）は加算あり。', flow:'① キャリアアップ計画書を労働局に提出\n② 対象者の所定労働時間を延長（週20時間以上に）\n③ 社会保険に加入させる\n④ 延長後6ヶ月分の賃金を支払う\n⑤ 支給申請書を労働局に提出', note:'社会保険の適用拡大（106万円の壁）への対応策。', keywords:['社会保険','労働時間延長','年収の壁','短時間労働','106万円','パート'], featured:false },
+        { id:'g06', name:'両立支援等助成金（出生時両立支援コース）', summary:'男性従業員の育児休業取得を推進した事業主に支給', amount:'1人目20万円 / 2〜3人目10万円', fee:FEE, period:'育休終了日の翌日から2ヶ月以内に申請', desc:'男性労働者が出生後8週間以内に育休を取得した場合に支給。3人目まで。取得率上昇の第2種もあり（最大60万円）。', flow:'① 一般事業主行動計画を策定し届出・公表・周知\n② 育休を取りやすい雇用環境を整備（研修・相談窓口等）\n③ 業務代替体制を整備\n④ 男性従業員が出生後8週間以内に育休を連続5日以上取得\n⑤ 育休終了日の翌日から2ヶ月以内に支給申請', note:'育休取得前に環境整備と行動計画の届出が完了していること。', keywords:['男性育休','育児休業','出生時','両立支援','パパ育休','育休取得率'], featured:true },
+        { id:'g07', name:'両立支援等助成金（育児休業等支援コース）', summary:'育休取得・職場復帰をスムーズに支援した中小企業に支給', amount:'取得時30万円 + 復帰時30万円', fee:FEE, period:'育休取得時・復帰時にそれぞれ申請', desc:'育休復帰支援プランを作成し従業員が育休を取得・職場復帰した場合に支給。中小企業のみ。', flow:'① 育休復帰支援プランを作成\n② 対象従業員と面談し引き継ぎを実施\n③ 従業員が連続3ヶ月以上の育休を取得\n④ 【取得時】育休開始日から3ヶ月経過後に申請\n⑤ 原職等に復帰させ6ヶ月継続雇用\n⑥ 【復帰時】復帰後6ヶ月経過後に申請', note:'復帰後は原職相当に復帰させること。中小企業限定。', keywords:['育休','育児休業','職場復帰','復帰支援','育休復帰'], featured:true },
+        { id:'g08', name:'両立支援等助成金（育休中等業務代替支援コース）', summary:'育休取得者の業務を代替する体制を整えた事業主に支給', amount:'新規雇用で最大81万円', fee:FEE, period:'育休取得者の復帰後に申請', desc:'育休取得者の業務代替のために新規雇用した場合や周囲の従業員に手当を支給した場合に助成。', flow:'① 育休取得者の業務代替計画を策定\n② 代替要員を新規雇用 or 周囲に業務を分担\n③ 業務代替手当を就業規則に規定し支給\n④ 育休取得者が復帰後に申請', note:'代替要員は同じ事業所で勤務していること。', keywords:['業務代替','代替要員','育休中','手当','人員補充'], featured:false },
+        { id:'g09', name:'両立支援等助成金（介護離職防止支援コース）', summary:'従業員の介護離職を防止するための取り組みを行った事業主に支給', amount:'介護休業取得時30万円 / 制度導入30〜50万円', fee:FEE, period:'介護休業取得後または制度導入後に申請', desc:'介護休業の取得促進や両立支援制度の導入等に対して助成。有給介護休暇制度導入への助成（30〜50万円）が新設。', flow:'① 介護支援プランを策定\n② 対象従業員と面談し引き継ぎを実施\n③ 従業員が介護休業を合計5日以上取得\n④ 復帰後、原職等に復帰させ3ヶ月継続雇用\n⑤ 支給申請書を労働局に提出', note:'介護に直面した従業員への個別周知が必要。', keywords:['介護','介護離職','介護休業','介護休暇','介護離職防止'], featured:false },
+        { id:'g10', name:'両立支援等助成金（柔軟な働き方選択制度等支援コース）', summary:'育児中の従業員向けに柔軟な働き方制度を導入した事業主に支給', amount:'最大60万円', fee:FEE, period:'制度利用後に申請', desc:'フレックス・短時間勤務・テレワーク等から2つ以上導入し利用させた場合に支給。障害児の場合は18歳まで延長で20万円加算。', flow:'① 柔軟な働き方制度を2つ以上就業規則に規定\n② 行動計画を策定・届出\n③ 対象従業員に制度を個別周知・意向確認\n④ 従業員が制度を実際に利用\n⑤ 利用開始から6ヶ月経過後に支給申請', note:'フレックス、短時間勤務、テレワーク、保育サービス費用補助等から2つ以上。', keywords:['柔軟な働き方','フレックス','テレワーク','短時間勤務','育児','在宅勤務'], featured:false },
+        { id:'g11', name:'両立支援等助成金（不妊治療及び女性の健康課題対応両立支援コース）', summary:'不妊治療や女性特有の健康課題と仕事の両立を支援した事業主に支給', amount:'最大30万円', fee:FEE, period:'制度導入・利用後に申請', desc:'不妊治療のための休暇制度・両立支援制度を導入し従業員が利用した場合に支給。', flow:'① 不妊治療のための休暇制度を就業規則に規定\n② 社内に相談窓口を設置、研修を実施\n③ 従業員が制度を実際に利用\n④ 利用後に支給申請', note:'制度の周知と環境整備が要件。', keywords:['不妊治療','女性の健康','両立支援','女性活躍'], featured:false },
+        { id:'g12', name:'人材開発支援助成金（人材育成支援コース）', summary:'従業員に職務関連の研修・訓練を実施した場合に経費と賃金を助成', amount:'経費の最大70% + 賃金助成760円/時', fee:FEE, period:'訓練終了後2ヶ月以内に申請', desc:'10時間以上のOFF-JT訓練を実施した場合に助成。年間上限1,000万円。', flow:'① 訓練計画を作成\n② 訓練計画届を労働局に提出（訓練開始1ヶ月前まで）\n③ 計画に沿って訓練を実施（10時間以上）\n④ 訓練中の賃金・経費を支払う\n⑤ 訓練終了後2ヶ月以内に支給申請\n⑥ 審査後、助成金を受給', note:'訓練開始前に計画届の提出が必須。所定労働時間内の訓練が対象。', keywords:['研修','訓練','人材育成','OFF-JT','OJT','スキルアップ','教育訓練'], featured:true },
+        { id:'g13', name:'人材開発支援助成金（事業展開等リスキリング支援コース）', summary:'DX・新規事業に必要なスキル習得のための訓練に最大75%助成', amount:'経費の最大75% + 賃金助成1,000円/時', fee:FEE, period:'訓練終了後2ヶ月以内に申請。2027年3月末まで', desc:'DX・カーボンニュートラル化・新規事業に必要な訓練に対して助成。年間上限1億円。期間限定。', flow:'① 事業展開計画書（またはDX推進計画）を作成\n② 訓練計画届を労働局に提出（訓練開始前）\n③ 外部研修機関等でOFF-JT訓練を実施\n④ 訓練中の賃金・経費を支払う\n⑤ 訓練終了後2ヶ月以内に支給申請', note:'2027年3月末までの期間限定。既存業務の効率化研修は対象外。', keywords:['リスキリング','DX','デジタル化','新規事業','GX','AI研修'], featured:true },
+        { id:'g14', name:'人材開発支援助成金（人への投資促進コース）', summary:'高度デジタル人材育成、自発的能力開発、定額制訓練等を助成', amount:'経費の最大75% + 賃金助成1,000円/時', fee:FEE, period:'訓練終了後2ヶ月以内に申請', desc:'高度デジタル人材（ITSSレベル4以上）の育成、サブスク型研修等に対して助成。', flow:'① 訓練計画・制度導入計画を作成\n② 訓練計画届を労働局に提出\n③ 訓練実施 or 制度を導入・適用\n④ 訓練終了後2ヶ月以内に支給申請', note:'高度デジタル人材訓練はITSSレベル4以上が要件。', keywords:['デジタル人材','サブスク研修','能力開発','ITSS','eラーニング'], featured:false },
+        { id:'g15', name:'65歳超雇用推進助成金（65歳超継続雇用促進コース）', summary:'65歳以上への定年引上げや定年廃止を実施した事業主に支給', amount:'最大160万円', fee:FEE, period:'制度実施日の翌日から2ヶ月以内に申請。計画届不要', desc:'定年引上げ・定年廃止・継続雇用制度導入に対して支給。計画届不要で申請しやすい。', flow:'① 60歳以上の雇用保険被保険者がいることを確認\n② 就業規則で定年引上げ or 定年廃止 or 継続雇用制度を規定\n③ 就業規則を労基署に届出\n④ 専門家（社労士等）に依頼し経費を支出\n⑤ 制度実施日の翌日から2ヶ月以内にJEEDへ申請', note:'申請先はJEED（高齢・障害・求職者雇用支援機構）。計画届不要。', keywords:['定年延長','65歳','70歳','定年廃止','高齢者雇用','シニア'], featured:true },
+        { id:'g16', name:'65歳超雇用推進助成金（高年齢者評価制度等雇用管理改善コース）', summary:'55歳以上の高齢者向けの雇用管理制度を整備した事業主に支給', amount:'最大60万円', fee:FEE, period:'計画期間終了後2ヶ月以内に申請', desc:'賃金・人事処遇制度の見直し、在宅勤務制度導入、健康管理制度導入等に対して助成。', flow:'① 雇用管理整備計画書を作成しJEEDに提出・認定\n② 計画に基づき雇用管理制度を整備・導入\n③ 制度を実施し対象高齢者に適用\n④ 計画期間終了後2ヶ月以内にJEEDへ支給申請', note:'計画の事前認定が必要。', keywords:['高齢者','シニア','雇用管理','評価制度','55歳以上'], featured:false },
+        { id:'g17', name:'トライアル雇用助成金（一般トライアルコース）', summary:'就職困難な求職者を試行雇用（原則3ヶ月）した事業主に支給', amount:'最大4万円/月×3ヶ月（計12万円/人）', fee:FEE, period:'トライアル雇用開始日から2週間以内に計画書を提出', desc:'ハローワーク等の紹介で求職者を原則3ヶ月試行雇用した場合に支給。母子家庭の母等は5万円/月。', flow:'① ハローワークにトライアル雇用求人を提出\n② ハローワーク等の紹介で対象者を採用\n③ 開始日から2週間以内に実施計画書を提出\n④ 原則3ヶ月のトライアル雇用を実施\n⑤ 終了後2ヶ月以内に支給申請', note:'ハローワーク経由の紹介が必須。直接応募は対象外。', keywords:['トライアル雇用','試用','ハローワーク','未経験','就職困難者','お試し雇用'], featured:false },
+        { id:'g18', name:'働き方改革推進支援助成金（労働時間短縮・年休促進支援コース）', summary:'労働時間短縮や有給休暇取得促進に取り組む中小企業に支給', amount:'最大730万円', fee:FEE, period:'事業実施計画書を交付申請締切日までに提出', desc:'時間外労働の削減、年次有給休暇取得促進等に取り組む中小企業に対して経費の一部を助成。', flow:'① 事業実施計画書を労働局に提出・交付申請\n② 交付決定後、計画に基づき取り組みを実施\n③ 就業規則の変更、研修実施、設備・ソフト導入等\n④ 事業実施期間内に取り組みを完了\n⑤ 期限内に支給申請書を提出', note:'交付決定前の発注・購入は対象外。中小企業限定。', keywords:['働き方改革','残業削減','有給休暇','時間外労働','労働時間','年休'], featured:false },
+        { id:'g19', name:'業務改善助成金', summary:'事業場内の最低賃金を引き上げ、設備投資等を行った中小企業に助成', amount:'最大600万円', fee:FEE, period:'賃金引上げ計画と設備投資計画を事前に申請', desc:'事業場内最低賃金を30円以上引上げ、生産性向上のための設備投資を行った場合に助成。助成率3/4〜9/10。', flow:'① 事業場内最低賃金と引上げ計画を確認\n② 交付申請書を労働局に提出\n③ 交付決定を受ける（決定前の発注は対象外）\n④ 賃金引上げを実施\n⑤ 設備投資・コンサルティング等を実施\n⑥ 実績報告書・支給申請書を提出', note:'交付決定前の経費は対象外。最低賃金との差額50円以内が要件。', keywords:['最低賃金','賃上げ','設備投資','生産性向上','業務改善','省力化'], featured:false }
       ];
     }
 
@@ -3335,6 +3404,54 @@ function openDocModal(editId = '', defaultGrantId = '') {
         'DROP POLICY IF EXISTS "Allow manage for authenticated" ON documents;\n' +
         'CREATE POLICY "Users manage own docs" ON documents FOR ALL TO authenticated USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);');
     }
+  };
+
+  // ── 助成金リセット＆再登録 ──
+  window.reseedGrants = async function() {
+    if (!confirm('助成金データを全件リセットして最新' + defaultGrants().length + '件を再登録します。\n既存の助成金データは全て削除されます。\n\nよろしいですか？')) return;
+    showToast('リセット中…');
+    try {
+      await supabaseClient.from('documents').update({ grant_id: null }).not('grant_id', 'is', null);
+      var { data: allGrants } = await supabaseClient.from('grants').select('id');
+      if (allGrants) {
+        for (var i = 0; i < allGrants.length; i++) {
+          await supabaseClient.from('grants').delete().eq('id', allGrants[i].id);
+        }
+      }
+      await dbSeedDefaults();
+      GRANTS = await dbLoadGrants();
+      buildKwMaps(); loadHome();
+      if (typeof renderGrants === 'function') renderGrants();
+      showToast('助成金 ' + GRANTS.length + '件を登録しました！');
+    } catch(e) {
+      console.error(e);
+      showToast('リセット失敗: ' + e.message, false);
+    }
+  };
+
+  // ── DB初期設定SQLを表示＆コピー ──
+  window.showMigrationSQL = function() {
+    var sql = '-- 資料テーブルにuser_idカラムを追加（個人管理用）\n' +
+      'ALTER TABLE documents ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id);\n\n' +
+      '-- 古いポリシーを削除\n' +
+      'DROP POLICY IF EXISTS "Allow select for authenticated" ON documents;\n' +
+      'DROP POLICY IF EXISTS "Allow manage for authenticated" ON documents;\n\n' +
+      '-- 新ポリシー：自分の資料だけ管理可能\n' +
+      'CREATE POLICY "Users manage own docs" ON documents FOR ALL TO authenticated\n' +
+      '  USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);\n\n' +
+      '-- 共有資料（user_id=NULL）は全員が閲覧可能\n' +
+      'CREATE POLICY "Users can see shared docs" ON documents FOR SELECT TO authenticated\n' +
+      '  USING (user_id IS NULL);\n\n' +
+      '-- 掲示板の削除ポリシー（なければ追加）\n' +
+      'DO $$ BEGIN\n' +
+      '  CREATE POLICY "Allow delete board" ON board_posts FOR DELETE TO authenticated USING (true);\n' +
+      'EXCEPTION WHEN duplicate_object THEN NULL;\n' +
+      'END $$;';
+
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(sql).then(function() { showToast('SQLをクリップボードにコピーしました！'); });
+    }
+    alert('以下のSQLをSupabase SQL Editorに貼り付けて実行してください：\n（Chromeシークレットモードで開くとエラー回避できます）\n\n' + sql);
   };
 
 
