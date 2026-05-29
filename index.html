@@ -1878,174 +1878,87 @@
 // ====================================================================
 // 【安全版】APIキーを排除した共通のGemini API呼び出し関数
 // ====================================================================
-async function callGeminiCommonAPI(promptText) {
-  // ★セキュリティ修正: フロントエンドからAPIキーを完全に削除しました。
-  // プロジェクトを本番運用する際は、前述したSupabase Edge Functions経由での呼び出し、
-  // もしくはSupabaseの Vault / データベース等から安全に取得する構成にしてください。
-  // ※一時的なローカルテスト時のみ、以下の変数にキーを代入してご利用ください（GitHubプッシュ前には必ず空にしてください）。
-  const GEMINI_KEY = ""; 
-  
-  if (!GEMINI_KEY) {
-    console.error('GEMINI_API_KEY が設定されていません。GitHubへの漏洩を防ぐため、キーはコード外で管理してください。');
-    throw new Error('APIキーが未設定です。セキュリティ保護のため直書きは禁止されています。');
+// Gemini AI — Vercel Serverless Function経由（APIキーはサーバー側に隠蔽）
+// コード内にAPIキーは一切ありません
+// ====================================================================
+async function callGemini(prompt) {
+  var res;
+  try {
+    res = await fetch('/api/gemini', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: prompt })
+    });
+  } catch(fetchErr) {
+    throw new Error('通信失敗: ' + fetchErr.message);
   }
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${GEMINI_KEY}`;
-  
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
-  });
+  // レスポンスのテキストを先に取得（JSONパース失敗対策）
+  var rawText = await res.text();
 
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data.error?.message || 'Gemini API error');
+  if (!res.ok) {
+    // 404等の場合はHTMLが返ってくるのでそのまま表示
+    if (rawText.includes('<!') || rawText.includes('<html')) {
+      throw new Error('API関数が見つかりません（404）。api/gemini.js がリポジトリのルートにあるか確認してください。');
+    }
+    try {
+      var errData = JSON.parse(rawText);
+      throw new Error(errData.error || 'AIエラー (' + res.status + ')');
+    } catch(e) {
+      if (e.message.includes('API関数')) throw e;
+      throw new Error('AIエラー (' + res.status + '): ' + rawText.substring(0, 100));
+    }
   }
 
-  const parts = data.candidates?.[0]?.content?.parts || [];
-  const text = parts.map(p => p.text || '').join('\n');
-  const match = text.match(/\{[\s\S]*\}/);
-
-  return {
-    text,
-    json: match ? JSON.parse(match[0]) : null
-  };
+  if (!rawText) throw new Error('AIからの応答が空です');
+  try {
+    return JSON.parse(rawText);
+  } catch(e) {
+    throw new Error('JSON解析失敗: ' + rawText.substring(0, 100));
+  }
 }
 
-// ====================================================================
-// AI提案機能（上記安全関数を利用するよう統合）
-// ====================================================================
+async function runAiConsultant(text) {
+  var hitsEl = document.getElementById('keyword-hits');
+  if (!hitsEl) return;
 
+  var grantNames = typeof GRANTS !== 'undefined' && GRANTS.length > 0
+    ? GRANTS.map(function(g) { return g.name; }).join(', ')
+    : "キャリアアップ助成金, 両立支援助成金";
 
-// index.html の中のAI呼び出し部分がこの形になっていれば完璧です
-async function callGeminiCommonAPI(promptText) {
-  if (!supabaseClient) {
-    console.error('SupabaseClientが初期化されていません');
-    throw new Error('システムエラー: Supabaseへの接続に失敗しています。');
-  }
+  hitsEl.innerHTML = '<div class="no-hits">🤖 AI分析中…</div>';
 
   try {
-    // APIキーはここには書かず、Supabaseの「gemini」という関数に処理を丸投げする
-    const { data, error } = await supabaseClient.functions.invoke('gemini', {
-      body: { prompt: promptText }
-    });
-
-    if (error) throw error;
-
-    return {
-      text: data.text || '',
-      json: data.json || null
-    };
-
+    var res = await callGemini(
+      "プロの助成金コンサルタントとして回答。JSON形式のみ出力。\n" +
+      '{"suggestions":[{"name":"助成金名","reason":"推奨理由を具体的に"}],' +
+      '"missing":[{"q":"次に確認すべき質問","why":"なぜこの質問が必要か"}]}' +
+      "\nsuggestionsは最大2件、missingは必ず5件出力。" +
+      "\nmissingは助成金申請の要件確認に必要な具体的な質問を挙げること。" +
+      "\n候補助成金:" + grantNames + "\nヒアリングメモ:" + text
+    );
+    if (!res.json || !res.json.suggestions) throw new Error("解析不可");
+    var data = res.json;
+    hitsEl.innerHTML =
+      '<div style="background:var(--blue-bg);padding:12px;border-radius:var(--r);margin-bottom:12px;border:1px solid var(--blue2);">' +
+      '<div style="font-weight:bold;color:var(--blue);font-size:12px;margin-bottom:8px;">💡 AIの推奨</div>' +
+      (data.suggestions||[]).map(function(s) {
+        return '<div style="margin-bottom:8px;"><div style="font-size:13px;font-weight:bold;">💰 '+s.name+'</div><div style="font-size:11px;color:var(--t2);">'+s.reason+'</div></div>';
+      }).join('') + '</div>' +
+      '<div style="background:var(--amber-bg);padding:14px;border-radius:var(--r);border:1px solid var(--amber);">' +
+      '<div style="font-weight:bold;color:var(--amber);font-size:12px;margin-bottom:10px;">🚩 次に聞くべきこと（' + (data.missing||[]).length + '件）</div>' +
+      (data.missing||[]).map(function(m, i) {
+        var q = typeof m === 'string' ? m : (m.q || m.question || '');
+        var why = typeof m === 'object' ? (m.why || m.reason || '') : '';
+        return '<div style="margin-bottom:10px;padding:8px 10px;background:rgba(255,255,255,0.5);border-radius:6px;border-left:3px solid var(--amber);">' +
+          '<div style="font-size:12px;font-weight:700;color:var(--t1);">' + (i+1) + '. ' + q + '</div>' +
+          (why ? '<div style="font-size:11px;color:var(--t2);margin-top:3px;">→ ' + why + '</div>' : '') + '</div>';
+      }).join('') + '</div>';
+    showToast('AI提案完了');
   } catch (e) {
-    console.error('AI処理エラー:', e.message);
-    throw new Error('AI提案の取得に失敗しました');
+    console.error("AI提案エラー:", e);
+    hitsEl.innerHTML = '<div class="no-hits" style="color:var(--red);">AI提案エラー: '+(e.message||e)+'</div>';
   }
-}
-
-
-
-
-async function runAiConsultant(text) {
-    const hitsEl = document.getElementById('keyword-hits');
-    if (!hitsEl) return;
-
-    const grantNames = typeof GRANTS !== 'undefined' && GRANTS.length > 0 
-        ? GRANTS.map(g => g.name).join(', ')
-        : "キャリアアップ助成金, 両立支援助成金";
-
-    const prompt = `助成金コンサルのプロとして回答してください。
-以下のメモを分析し、JSON形式 {"suggestions": [{"name": "助成金名", "reason": "理由"}], "missing": ["不足項目1", "不足項目2"]} で出力してください。
-1. 候補：${grantNames} から最適なものを最大2つ。
-2. 不足：申請要件を確認するために「次に聞くべきこと」を2つ。
-メモ：${text}`;
-
-    try {
-        const resData = await callGeminiCommonAPI(prompt);
-        const res = resData.json;
-        
-        if (res && res.suggestions && res.missing) {
-            hitsEl.innerHTML = `
-                <div style="background:var(--blue-bg); padding:12px; border-radius:var(--r); margin-bottom:12px; border:1px solid var(--blue2);">
-                    <div style="font-weight:bold; color:var(--blue); font-size:12px; margin-bottom:8px;">💡 AIの推奨</div>
-                    ${res.suggestions.map(s => `
-                        <div style="margin-bottom:8px;">
-                            <div style="font-size:13px; font-weight:bold;">💰 ${s.name}</div>
-                            <div style="font-size:11px; color:var(--t2);">${s.reason}</div>
-                        </div>
-                    `).join('')}
-                </div>
-                <div style="background:var(--amber-bg); padding:12px; border-radius:var(--r); border:1px solid var(--amber);">
-                    <div style="font-weight:bold; color:var(--amber); font-size:12px; margin-bottom:8px;">🚩 不足している確認事項</div>
-                    <ul style="padding-left:18px; margin:0; font-size:12px; line-height:1.6;">
-                        ${res.missing.map(m => `<li>${m}</li>`).join('')}
-                    </ul>
-                </div>
-            `;
-        } else {
-            throw new Error("AIの返却フォーマットが不正です");
-        }
-    } catch (e) {
-        console.error("AI提案エラー:", e);
-        hitsEl.innerHTML = `<div style="color:var(--red); font-size:12px; padding:10px;">AI提案の取得に失敗しました: ${e.message}</div>`;
-    }
-}
-
-
-
-async function runAiConsultant(text) {
-    const hitsEl = document.getElementById('keyword-hits');
-    if (!hitsEl) return;
-
-    // 現在の助成金リストを取得
-    const grantNames = typeof GRANTS !== 'undefined' && GRANTS.length > 0 
-        ? GRANTS.map(g => g.name).join(', ')
-        : "キャリアアップ助成金, 両立支援助成金";
-
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${GEMINI_API_KEY}`;
-
-    const prompt = `助成金コンサルのプロとして回答してください。
-以下のメモを分析し、JSON形式 {"suggestions": [{"name": "助成金名", "reason": "理由"}], "missing": ["不足項目1", "不足項目2"]} で出力してください。
-1. 候補：${grantNames} から最適なものを最大2つ。
-2. 不足：申請要件を確認するために「次に聞くべきこと」を2つ。
-メモ：${text}`;
-
-    try {
-        const response = await fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-        });
-
-        const data = await response.json();
-        const allParts = data.candidates[0].content.parts || [];
-        const rawText = allParts.map(p => p.text || '').join('\n');
-        const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-        
-        if (jsonMatch) {
-            const res = JSON.parse(jsonMatch[0]);
-            hitsEl.innerHTML = `
-                <div style="background:var(--blue-bg); padding:12px; border-radius:var(--r); margin-bottom:12px; border:1px solid var(--blue2);">
-                    <div style="font-weight:bold; color:var(--blue); font-size:12px; margin-bottom:8px;">💡 AIの推奨</div>
-                    ${res.suggestions.map(s => `
-                        <div style="margin-bottom:8px;">
-                            <div style="font-size:13px; font-weight:bold;">💰 ${s.name}</div>
-                            <div style="font-size:11px; color:var(--t2);">${s.reason}</div>
-                        </div>
-                    `).join('')}
-                </div>
-                <div style="background:var(--amber-bg); padding:12px; border-radius:var(--r); border:1px solid var(--amber);">
-                    <div style="font-weight:bold; color:var(--amber); font-size:12px; margin-bottom:8px;">🚩 不足している確認事項</div>
-                    <ul style="padding-left:18px; margin:0; font-size:12px; line-height:1.6;">
-                        ${res.missing.map(m => `<li>${m}</li>`).join('')}
-                    </ul>
-                </div>
-            `;
-        }
-    } catch (e) {
-        console.error("AI提案エラー:", e);
-    }
 }
 
 
@@ -2676,77 +2589,47 @@ window.saveMemo = async function() {
         probReason: ""
     };
 
-    showToast("保存と同時にAI分析を開始します...");
+    showToast("保存中…");
 
-
-    try {
-        // ★ここを無料枠でたっぷり使える「gemini-2.5-flash-lite」に変更しました！
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${API_KEY}`;
-
-        const prompt = `あなたはプロの助成金コンサルタントです。
-以下のヒアリングメモから、成約確度（お客様が契約してくれる可能性）を10%〜100%の間で判定してください。
-また、その理由を30文字以内で1行で書いてください。
-出力は必ず以下のJSON形式のみとし、前後の説明文は一切不要です。
-{"prob": 数値, "reason": "理由"}
-
-ヒアリングメモ：
-${text}`;
-
-        const response = await fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }]
-            })
-        });
-
-        if (!response.ok) {
-            const errData = await response.json();
-            throw new Error(errData.error?.message || "通信エラー");
-        }
-
-        const data = await response.json();
-        // 全パートからテキストを結合（思考モデル対策）
-        const allParts = data.candidates[0].content.parts || [];
-        const rawText = allParts.map(p => p.text || '').join('\n');
-
-        const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-            const parsedData = JSON.parse(jsonMatch[0]);
-            memoData.probability = parsedData.prob;
-            memoData.probReason = parsedData.reason;
-        } else {
-            throw new Error("AIの回答形式が不正です");
-        }
-
-    } catch (e) {
-        console.error("AI分析失敗詳細:", e);
-        memoData.probability = "エラー";
-        memoData.probReason = "分析失敗: " + e.message; 
-    }
-
-    // --- 保存処理 (Supabase) ---
+    // ── ① 即座に保存（AI結果を待たない） ──
     const existingIdx = MEMOS.findIndex(m => m.company === company && (m.contact || '') === contact);
-    if (existingIdx >= 0) {
-        memoData.id = MEMOS[existingIdx].id;
-    } else {
-        memoData.id = '';  // 新規（DBがUUID生成）
-    }
+    if (existingIdx >= 0) { memoData.id = MEMOS[existingIdx].id; }
+    else { memoData.id = ''; }
 
     try {
         await dbSaveMemo(memoData);
         MEMOS = await dbLoadMemos();
-    } catch(e) {
-        console.error('DB保存失敗:', e);
-    }
+    } catch(e) { console.error('DB保存失敗:', e); }
     if (typeof renderMemoList === 'function') renderMemoList();
     updatePastMemoSel();
-    
-    if (memoData.probability !== "エラー") {
-        showToast(`AI分析完了。確度${memoData.probability}%で履歴に登録しました。`);
-    } else {
-        showToast(`メモは保存されましたが、AI分析に失敗しました。`, false);
-    }
+    showToast('保存完了！AI分析中…');
+
+    // ── ② 裏でAI分析 → 完了したらDB更新 ──
+    callGemini('助成金コンサルとして成約確度を判定。probは10から100の整数(%)で出力。JSONのみ:{"prob":60,"reason":"20字以内の理由"}\nメモ:' + text)
+      .then(async function(res) {
+        if (res && res.json && res.json.prob != null) {
+          var p = Number(res.json.prob);
+          if (p > 0 && p < 1) p = Math.round(p * 100);
+          else p = Math.round(p);
+          memoData.probability = p;
+          memoData.probReason = res.json.reason || '';
+        } else {
+          memoData.probability = "—";
+          memoData.probReason = "解析不可";
+        }
+        var saved = MEMOS.find(function(m) { return m.company === company; });
+        if (saved) memoData.id = saved.id;
+        try {
+          await dbSaveMemo(memoData);
+          MEMOS = await dbLoadMemos();
+          if (typeof renderMemoList === 'function') renderMemoList();
+        } catch(e) { console.error(e); }
+        showToast('AI分析完了 確度' + memoData.probability + '%');
+      })
+      .catch(function(e) {
+        console.error("AI分析失敗:", e);
+        showToast('AI分析失敗', false);
+      });
 };
     function updateMemo() {
       const id = document.getElementById('mm-id').value;

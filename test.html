@@ -1,0 +1,3304 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>在庫管理システム</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-size: medium;
+    }
+
+
+    :root {
+      --bg: #f8f8f6;
+      --bg2: #fff;
+      --bg3: #f1efe8;
+      --border: #e0ddd5;
+      --border2: #ccc;
+      --text: #1a1a18;
+      --text2: #5f5e5a;
+      --text3: #9c9a92;
+      --blue: #378ADD;
+      --blue-bg: #E6F1FB;
+      --blue-text: #0C447C;
+      --teal: #1D9E75;
+      --teal-bg: #E1F5EE;
+      --teal-text: #085041;
+      --red: #E24B4A;
+      --red-bg: #FCEBEB;
+      --red-text: #791F1F;
+      --amber: #EF9F27;
+      --amber-bg: #FAEEDA;
+      --amber-text: #633806;
+      --purple-bg: #EEEDFE;
+      --purple-text: #3C3489;
+      --gray-bg: #F1EFE8;
+      --gray-text: #444441;
+      --radius: 8px;
+      --radius-lg: 12px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Yu Gothic UI', sans-serif;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+
+    .nav-item {
+      font-size: 15px;
+    }
+
+    .app {
+      display: flex;
+      height: 100vh;
+    }
+
+    .sidebar {
+      width: 168px;
+      flex-shrink: 0;
+      background: var(--bg2);
+      border-right: 0.5px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    .logo {
+      padding: 14px;
+      font-size: 25px;
+      font-weight: 600;
+      border-bottom: 0.5px solid var(--border);
+      line-height: 1.4;
+    }
+
+    .logo small {
+      font-size: 20px;
+      color: var(--text3);
+      font-weight: 400;
+      display: block;
+    }
+
+    .nav-section {
+      font-size: 20px;
+      color: var(--text3);
+      padding: 10px 10px 4px;
+      letter-spacing: .04em;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 7px 10px;
+      border-radius: 6px;
+      margin: 1px 6px;
+      cursor: pointer;
+      color: var(--text2);
+      font-size: 15px;
+      transition: all .12s;
+    }
+
+    .nav-item:hover {
+      background: var(--bg3);
+    }
+
+    .nav-item.on {
+      background: var(--blue-bg);
+      color: var(--blue-text);
+      font-weight: 500;
+    }
+
+    .nav-item.hidden {
+      display: none;
+    }
+
+    .nav-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .main {
+      flex: 1;
+      overflow: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .topbar {
+      background: var(--bg2);
+      border-bottom: 0.5px solid var(--border);
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .page-title {
+      font-size: 25px;
+      font-weight: 600;
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .content {
+      padding: 16px 18px;
+      flex: 1;
+    }
+
+    .screen {
+      display: none;
+    }
+
+    .screen.on {
+      display: block;
+    }
+
+    .card {
+      background: var(--bg2);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 14px 16px;
+      margin-bottom: 12px;
+    }
+
+    .row2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .row3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .row4 {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .mc {
+      background: var(--bg3);
+      border-radius: var(--radius);
+      padding: 12px 14px;
+    }
+
+    .mc-v {
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .mc-l {
+      font-size: 15px;
+      color: var(--text2);
+      margin-top: 2px;
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 2px 7px;
+      border-radius: 10px;
+      white-space: nowrap;
+    }
+
+    .b-in {
+      background: var(--teal-bg);
+      color: var(--teal-text);
+    }
+
+    .b-out {
+      background: var(--red-bg);
+      color: var(--red-text);
+    }
+
+    .b-idle {
+      background: var(--gray-bg);
+      color: var(--gray-text);
+    }
+
+    .b-broken {
+      background: var(--amber-bg);
+      color: var(--amber-text);
+    }
+
+    .b-disposed {
+      background: #f1efe8;
+      color: #5f5e5a;
+    }
+
+    .b-low {
+      background: var(--amber-bg);
+      color: var(--amber-text);
+    }
+
+    .b-ok {
+      background: var(--teal-bg);
+      color: var(--teal-text);
+    }
+
+    .b-blue {
+      background: var(--blue-bg);
+      color: var(--blue-text);
+    }
+
+    .b-purple {
+      background: var(--purple-bg);
+      color: var(--purple-text);
+    }
+
+    .b-ordered {
+      background: #FEF3C7;
+      color: #92400E;
+    }
+
+    .tbl-wrap {
+      overflow-x: auto;
+    }
+
+    .tbl {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 15px;
+    }
+
+    .tbl th {
+      text-align: left;
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text3);
+      padding: 6px 8px;
+      border-bottom: 0.5px solid var(--border);
+      white-space: nowrap;
+    }
+
+    .tbl td {
+      padding: 8px 8px;
+      border-bottom: 0.5px solid var(--border);
+      vertical-align: middle;
+    }
+
+    .tbl tr:last-child td {
+      border-bottom: none;
+    }
+
+    .tbl tr:hover td {
+      background: var(--bg3);
+    }
+
+    .search-bar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .inp {
+      height: 30px;
+      border: 0.5px solid var(--border2);
+      border-radius: 6px;
+      background: var(--bg3);
+      font-size: 15px;
+      color: var(--text);
+      padding: 0 9px;
+    }
+
+    .inp:focus {
+      outline: none;
+      border-color: var(--blue);
+    }
+
+    .sel {
+      height: 30px;
+      border: 0.5px solid var(--border2);
+      border-radius: 6px;
+      background: var(--bg3);
+      font-size: 15px;
+      color: var(--text);
+      padding: 0 6px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .form-grid3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .form-label {
+      font-size: 15px;
+      color: var(--text2);
+    }
+
+    .form-inp {
+      height: 30px;
+      border: 0.5px solid var(--border2);
+      border-radius: 6px;
+      background: var(--bg3);
+      font-size: 15px;
+      color: var(--text);
+      padding: 0 9px;
+      width: 100%;
+    }
+
+    .form-inp:focus {
+      outline: none;
+      border-color: var(--blue);
+    }
+
+    .form-sel {
+      height: 30px;
+      border: 0.5px solid var(--border2);
+      border-radius: 6px;
+      background: var(--bg3);
+      font-size: 15px;
+      color: var(--text);
+      padding: 0 6px;
+      width: 100%;
+    }
+
+    .btn {
+      height: 30px;
+      padding: 0 12px;
+      border: 0.5px solid var(--border2);
+      border-radius: 6px;
+      background: transparent;
+      font-size: 15px;
+      color: var(--text);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all .12s;
+    }
+
+    .btn:hover {
+      background: var(--bg3);
+    }
+
+    .btn:active {
+      opacity: .8;
+    }
+
+    .btn-primary {
+      background: var(--blue);
+      color: #fff;
+      border-color: var(--blue);
+    }
+
+    .btn-primary:hover {
+      background: #185FA5;
+    }
+
+    .btn-danger {
+      background: var(--red-bg);
+      color: var(--red-text);
+      border-color: #F09595;
+    }
+
+    .btn-success {
+      background: var(--teal-bg);
+      color: var(--teal-text);
+      border-color: #5DCAA5;
+    }
+
+    .btn-warning {
+      background: var(--amber-bg);
+      color: var(--amber-text);
+      border-color: #FAC775;
+    }
+
+    .btn-sm {
+      height: 26px;
+      padding: 0 9px;
+      font-size: 15px;
+    }
+
+    .alert-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 12px;
+      border-radius: 8px;
+      background: var(--amber-bg);
+      border: 0.5px solid #FAC775;
+      margin-bottom: 8px;
+    }
+
+    .alert-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--amber);
+      flex-shrink: 0;
+    }
+
+    .alert-text {
+      font-size: 15px;
+      color: var(--amber-text);
+      flex: 1;
+    }
+
+    .alert-btn {
+      font-size: 15px;
+      padding: 3px 9px;
+      border: 0.5px solid #FAC775;
+      border-radius: 6px;
+      background: #fff;
+      color: var(--amber-text);
+      cursor: pointer;
+    }
+
+    .modal-bg {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .4);
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-bg.on {
+      display: flex;
+    }
+
+    .modal {
+      background: var(--bg2);
+      border-radius: var(--radius-lg);
+      border: 0.5px solid var(--border);
+      padding: 20px;
+      width: 560px;
+      max-width: 95vw;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-title {
+      font-size: 25px;
+      font-weight: 600;
+      margin-bottom: 14px;
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 0.5px solid var(--border);
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 25px;
+      z-index: 200;
+      opacity: 0;
+      transition: opacity .3s;
+      pointer-events: none;
+      font-weight: 500;
+    }
+
+    .toast.show {
+      opacity: 1;
+    }
+
+    .progress-bar {
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 4px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: 3px;
+      background: var(--teal);
+      transition: width .3s;
+    }
+
+    .perm-grid {
+      display: grid;
+      grid-template-columns: 160px repeat(4, 1fr);
+      font-size: 15px;
+    }
+
+    .perm-head {
+      padding: 6px 4px;
+      text-align: center;
+      font-weight: 500;
+      color: var(--text2);
+      border-bottom: 0.5px solid var(--border);
+    }
+
+    .perm-label {
+      padding: 7px 4px;
+      font-size: 15px;
+      border-bottom: 0.5px solid var(--border);
+    }
+
+    .perm-cell {
+      padding: 7px 4px;
+      text-align: center;
+      border-bottom: 0.5px solid var(--border);
+    }
+
+    .ck {
+      color: var(--teal);
+      font-size: 24px;
+      font-weight: 600;
+    }
+
+    .cno {
+      color: var(--border2);
+    }
+
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: var(--text3);
+      font-size: 15px;
+    }
+
+    .error-msg {
+      background: var(--red-bg);
+      color: var(--red-text);
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 15px;
+      margin-bottom: 10px;
+    }
+
+    .inv-checked {
+      background: var(--teal-bg);
+      color: var(--teal-text);
+      font-size: 20px;
+      padding: 2px 7px;
+      border-radius: 10px;
+    }
+
+    .notif-banner {
+      background: var(--blue-bg);
+      border: 0.5px solid #B5D4F4;
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .notif-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--blue);
+      flex-shrink: 0;
+    }
+
+    .notif-text {
+      font-size: 15px;
+      color: var(--blue-text);
+      flex: 1;
+    }
+
+    .notif-panel {
+      background: var(--blue-bg);
+      border: 0.5px solid #B5D4F4;
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-bottom: 12px;
+    }
+
+    .notif-panel h4 {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--blue-text);
+      margin-bottom: 8px;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .section-title {
+      font-size: 25px;
+      font-weight: 600;
+    }
+
+    /* ログイン */
+    #login-screen {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    #login-screen.on {
+      display: flex;
+    }
+
+    .login-box {
+      background: var(--bg2);
+      border: 0.5px solid var(--border);
+      border-radius: 16px;
+      padding: 36px 32px;
+      width: 380px;
+      max-width: 95vw;
+    }
+
+    .login-logo {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .login-logo-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: var(--blue);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 12px;
+      font-size: 15px;
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .login-logo h1 {
+      font-size: 27px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .login-logo p {
+      font-size: 15px;
+      color: var(--text3);
+    }
+
+    .login-field {
+      margin-bottom: 14px;
+    }
+
+    .login-label {
+      font-size: 15px;
+      color: var(--text2);
+      margin-bottom: 5px;
+      display: block;
+    }
+
+    .login-inp {
+      width: 100%;
+      height: 38px;
+      border: 0.5px solid var(--border2);
+      border-radius: 8px;
+      background: var(--bg3);
+      font-size: 18px;
+      color: var(--text);
+      padding: 0 12px;
+    }
+
+    .login-inp:focus {
+      outline: none;
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(55, 138, 221, .12);
+    }
+
+    .login-btn {
+      width: 100%;
+      height: 38px;
+      background: var(--blue);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 18px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 6px;
+      transition: background .15s;
+    }
+
+    .login-btn:hover {
+      background: #185FA5;
+    }
+
+    .login-btn:disabled {
+      background: var(--border2);
+      cursor: not-allowed;
+    }
+
+    .login-err {
+      background: var(--red-bg);
+      color: var(--red-text);
+      border-radius: 8px;
+      padding: 9px 12px;
+      font-size: 15px;
+      margin-bottom: 12px;
+      display: none;
+    }
+
+    .login-err.on {
+      display: block;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255, 255, 255, .4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .6s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .logout-btn {
+      height: 28px;
+      padding: 0 12px;
+      border: 0.5px solid var(--border2);
+      border-radius: 6px;
+      background: transparent;
+      font-size: 15px;
+      color: var(--text2);
+      cursor: pointer;
+    }
+
+    .logout-btn:hover {
+      background: var(--red-bg);
+      color: var(--red-text);
+      border-color: #F09595;
+    }
+
+    /* 発注申請 ステータスバッジ */
+    .status-new {
+      background: #DBEAFE;
+      color: #1E40AF;
+    }
+
+    .status-shortage {
+      background: var(--amber-bg);
+      color: var(--amber-text);
+    }
+
+    /* 確認ダイアログ */
+    .confirm-box {
+      background: var(--bg2);
+      border-radius: var(--radius-lg);
+      border: 0.5px solid var(--border);
+      padding: 24px;
+      width: 420px;
+      max-width: 95vw;
+    }
+
+    .confirm-title {
+      font-size: 25px;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+
+    .confirm-msg {
+      font-size: 25px;
+      color: var(--text2);
+      margin-bottom: 18px;
+      line-height: 1.7;
+    }
+
+    /* カスタム使用者ピッカー */
+    .user-picker {
+      position: relative;
+    }
+
+    .user-picker-btn {
+      width: 100%;
+      height: 36px;
+      padding: 0 10px;
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--bg2);
+      color: var(--text1);
+      font-size: 14px;
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .user-picker-btn:hover {
+      border-color: var(--accent);
+    }
+
+    .user-picker-dropdown {
+      display: none;
+      position: absolute;
+      z-index: 999;
+      top: calc(100% + 4px);
+      left: 0;
+      right: 0;
+      background: var(--bg2);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, .12);
+      overflow: hidden;
+    }
+
+    .user-picker-dropdown.open {
+      display: block;
+    }
+
+    .user-picker-list {
+      max-height: calc(5 * 36px);
+      overflow-y: auto;
+    }
+
+    .user-picker-option {
+      padding: 8px 12px;
+      font-size: 14px;
+      cursor: pointer;
+      border-bottom: 0.5px solid var(--border);
+    }
+
+    .user-picker-option:last-child {
+      border-bottom: none;
+    }
+
+    .user-picker-option:hover {
+      background: var(--bg3);
+    }
+
+    .user-picker-option.selected {
+      background: var(--accent-bg, #EFF6FF);
+      color: var(--accent);
+      font-weight: 500;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ログイン画面 -->
+  <div id="login-screen" class="on">
+    <div class="login-box">
+      <div class="login-logo">
+        <div class="login-logo-icon">在</div>
+        <h1>在庫管理システム</h1>
+
+      </div>
+      <div id="login-err" class="login-err"></div>
+      <div class="login-field">
+        <label class="login-label">メールアドレス</label>
+        <input class="login-inp" type="email" id="login-email" placeholder="your@email.com" autocomplete="email">
+      </div>
+      <div class="login-field">
+        <label class="login-label">パスワード</label>
+        <input class="login-inp" type="password" id="login-pass" placeholder="パスワード"
+          onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <button class="login-btn" id="login-btn" onclick="doLogin()">ログインする</button>
+      <div style="text-align:center;margin-top:12px;">
+        <button
+          style="font-size:14px;color:var(--blue);cursor:pointer;background:none;border:none;text-decoration:underline;"
+          onclick="doResetPassword()">パスワードを忘れた場合</button>
+      </div>
+      <div style="text-align:center;margin-top:16px;font-size:14px;color:var(--text3);">Powered by Supabase Auth</div>
+    </div>
+  </div>
+
+  <div class="app" id="main-app" style="display:none;">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="logo">在庫管理</div>
+      <div style="padding:6px;">
+        <div class="nav-section"></div>
+        <div class="nav-item on" data-screen="dashboard">
+          <div class="nav-dot" style="background:#378ADD;"></div>ダッシュボード
+        </div>
+        <div class="nav-item" data-screen="master">
+          <div class="nav-dot" style="background:#534AB7;"></div>設備管理
+        </div>
+        <div class="nav-item" data-screen="inout">
+          <div class="nav-dot" style="background:#1D9E75;"></div>入庫管理
+        </div>
+
+        <div class="nav-item" data-screen="inventory">
+          <div class="nav-dot" style="background:#EF9F27;"></div>棚卸し
+        </div>
+        <div class="nav-section"></div>
+        <div class="nav-item" data-screen="order">
+          <div class="nav-dot" style="background:#D85A30;"></div>発注申請
+        </div>
+        <div class="nav-item" data-screen="order-status">
+          <div class="nav-dot" style="background:#7C3AED;"></div>発注状況管理
+        </div>
+        <div class="nav-item" data-screen="dispose-list">
+          <div class="nav-dot" style="background:#059669;"></div>廃棄一覧
+        </div>
+        <div class="nav-item" data-screen="dispose">
+          <div class="nav-dot" style="background:#E24B4A;"></div>廃棄登録
+        </div>
+        <div class="nav-item" data-screen="employees">
+          <div class="nav-dot" style="background:#2563EB;"></div>従業員一覧
+        </div>
+        <div class="nav-section">管理</div>
+        <div class="nav-item hidden" id="nav-users" data-screen="users">
+          <div class="nav-dot" style="background:#B4B2A9;"></div>権限管理
+        </div>
+        <div class="nav-item" data-screen="myaccount">
+          <div class="nav-dot" style="background:#0891B2;"></div>アカウント設定
+        </div>
+      </div>
+    </div>
+
+    <!-- Main -->
+    <div class="main">
+      <div class="topbar">
+        <div class="page-title" id="page-title">ダッシュボード</div>
+        <div class="topbar-right">
+          <span style="font-size:14px;color:var(--text3);" id="login-user">—</span>
+          <span class="badge b-purple" id="login-role"></span>
+          <button class="logout-btn" onclick="doLogout()">ログアウト</button>
+        </div>
+      </div>
+      <div class="content">
+
+        <!-- ダッシュボード -->
+        <div id="s-dashboard" class="screen on">
+          <div class="row3" style="margin-bottom:14px;">
+            <div class="mc">
+              <div class="mc-v" id="d-total">—</div>
+              <div class="mc-l">総設備数</div>
+            </div>
+            <div class="mc">
+              <div class="mc-v" style="color:var(--teal);" id="d-inuse">—</div>
+              <div class="mc-l">使用中</div>
+            </div>
+            <div class="mc">
+              <div class="mc-v" style="color:var(--red);" id="d-disposed">—</div>
+              <div class="mc-l">今月廃棄</div>
+            </div>
+          </div>
+          <div id="dash-order-notifs" style="margin-bottom:8px;"></div>
+          <!-- 発注申請通知（全ユーザー向け） -->
+          <div id="dash-new-orders" style="margin-bottom:8px;"></div>
+          <div class="row2">
+            <div class="card">
+              <div style="font-size:14px;font-weight:600;margin-bottom:10px;">最近の入庫（直近5件）</div>
+              <div class="tbl-wrap">
+                <table class="tbl">
+                  <thead>
+                    <tr>
+                      <th>管理番号</th>
+                      <th>メーカー・機種名</th>
+                      <th>数量</th>
+                      <th>登録者</th>
+                      <th>日付</th>
+                    </tr>
+                  </thead>
+                  <tbody id="d-recent"></tbody>
+                </table>
+              </div>
+            </div>
+            <div class="card">
+              <div style="font-size:14px;font-weight:600;margin-bottom:10px;">種類別在庫</div>
+              <div id="d-category"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 設備管理 -->
+        <div id="s-master" class="screen">
+          <div class="search-bar">
+            <input class="inp" id="m-search" placeholder="メーカー・機種名・管理番号で検索..."
+              style="flex:1;min-width:180px;" oninput="renderMaster()">
+            <select class="sel" id="m-cat" onchange="renderMaster()">
+              <option value="">全種類</option>
+              <option>ノートPC</option>
+                <option>デスクトップ</option>
+                <option>モニター</option>
+                <option>キーボード</option>
+                <option>マウス</option>
+                <option>ヘッドホン</option>
+                <option>ウェブカメラ</option>
+                <option>USBメモリ</option>
+                <option>その他</option>
+            </select>
+            <select class="sel" id="m-user" onchange="renderMaster()">
+              <option value="">全使用者</option>
+            </select>
+            <select class="sel" id="m-map" onchange="renderMaster()">
+              <option value="">保管場所</option>
+              <option>日比谷</option>
+                <option>日本橋</option>
+                <option>自宅</option>
+                <option>日比谷倉庫</option>
+                <option>日本橋倉庫</option>
+            </select>
+          </div>
+          <div class="card" style="padding:0;">
+            <div class="tbl-wrap">
+              <table class="tbl">
+                <thead>
+                  <tr>
+                    <th>管理番号</th>
+                    <th>メーカー・機種名</th>
+                    <th>種類</th>
+                    <th>使用者</th>
+                    <th>保管・使用場所</th>
+                    <th>シリアルNO</th>
+                    <th>利用状態</th>
+                    <th>購入日</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="master-body">
+                  <tr>
+                    <td colspan="9" class="loading">読み込み中...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- 入庫管理（出庫非表示） -->
+        <div id="s-inout" class="screen">
+          <div class="card">
+            <div style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--teal);">入庫登録</div>
+            <div class="form-group" style="margin-bottom:8px;">
+              <div class="form-label">設備種類</div>
+              <select class="form-sel" id="in-category">
+                <option value="">-- 種類を選択 --</option>
+                <option>ノートPC</option>
+                <option>デスクトップ</option>
+                <option>モニター</option>
+                <option>キーボード</option>
+                <option>マウス</option>
+                <option>ヘッドホン</option>
+                <option>ウェブカメラ</option>
+                <option>USBメモリ</option>
+                <option>その他</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin-bottom:8px;">
+              <div class="form-label">管理番号</div>
+              <input class="form-inp" id="in-code" placeholder="例：100001（空欄で種類別に自動生成）">
+            </div>
+            <div class="form-group" style="margin-bottom:8px;">
+              <div class="form-label">メーカー・機種名 *</div><input class="form-inp" id="in-name" placeholder="例：ノートPC">
+            </div>
+            <div class="form-group" style="margin-bottom:8px;">
+              <div class="form-label">使用者</div>
+              <div class="user-picker" id="in-user-picker">
+                <button type="button" class="user-picker-btn" onclick="toggleUserPicker('in-user-picker')">
+                  <span id="in-user-label">-- 使用者を選択（任意）--</span>
+                  <span>▾</span>
+                </button>
+                <div class="user-picker-dropdown" id="in-user-dropdown">
+                  <div class="user-picker-list" id="in-user-list"></div>
+                </div>
+              </div>
+              <input type="hidden" id="in-user" value="">
+            </div>
+            <div class="form-group" style="margin-bottom:8px;">
+              <div class="form-label">数量</div><input class="form-inp" type="number" id="in-qty" value="1" min="1">
+            </div>
+            <div class="form-group" style="margin-bottom:8px;">
+              <div class="form-label">シリアルNO</div><input class="form-inp" type="text" id="in-siri" min="1">
+            </div>
+            <div class="form-group" style="margin-bottom:8px;">
+              <div class="form-label">保管・使用場所</div>
+              <select class="form-sel" id="in-location">
+                <option value="日比谷">日比谷</option>
+                <option value="日本橋">日本橋</option>
+                <option value="在宅">在宅</option>
+                <option value="日比谷倉庫">日比谷倉庫</option>
+                <option value="日本橋倉庫">日本橋倉庫</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin-bottom:8px;">
+              <div class="form-label">入荷日</div><input class="form-inp" type="date" id="in-date">
+            </div>
+            <div class="form-group" style="margin-bottom:12px;">
+              <div class="form-label">備考</div><input class="form-inp" id="in-note" placeholder="納品業者など">
+            </div>
+            <div style="font-size:14px;color:var(--text3);margin-bottom:6px;">登録者：<span id="in-recorder">—</span></div>
+            <button class="btn btn-success" style="width:100%;" onclick="doInbound()">入庫登録する</button>
+          </div>
+          <div class="card">
+            <div style="font-size:14px;font-weight:600;margin-bottom:10px;">入庫履歴</div>
+            <div class="tbl-wrap">
+              <table class="tbl">
+                <thead>
+                  <tr>
+                    <th>日付</th>
+                    <th>管理番号</th>
+                    <th>メーカー・機種名</th>
+                    <th>数量</th>
+                    <th>使用者</th>
+                    <th>備考</th>
+                    <th>登録者</th>
+                  </tr>
+                </thead>
+                <tbody id="inout-history"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- 廃棄一覧 -->
+        <div id="s-dispose-list" class="screen">
+          <div class="search-bar">
+            <input class="inp" id="dl-search" placeholder="メーカー・機種名・廃棄理由・登録者で検索..." style="flex:1;min-width:180px;"
+              oninput="renderDisposeList()">
+            <input class="inp" type="month" id="dl-month" onchange="renderDisposeList()">
+          </div>
+          <div class="row4" style="margin-bottom:12px;">
+            <div class="mc">
+              <div class="mc-v" style="color:var(--red);" id="dl-total">—</div>
+              <div class="mc-l">累計廃棄件数</div>
+            </div>
+            <div class="mc">
+              <div class="mc-v" style="color:var(--amber);" id="dl-month-count">—</div>
+              <div class="mc-l">今月廃棄</div>
+            </div>
+            <div class="mc">
+              <div class="mc-v" id="dl-qty-total">—</div>
+              <div class="mc-l">累計廃棄数量</div>
+            </div>
+            <div class="mc">
+              <div class="mc-v" id="dl-month-qty">—</div>
+              <div class="mc-l">今月廃棄数量</div>
+            </div>
+          </div>
+          <div class="card" style="padding:0;">
+            <div class="tbl-wrap">
+              <table class="tbl">
+                <thead>
+                  <tr>
+                    <th>廃棄日</th>
+                    <th>管理番号</th>
+                    <th>メーカー・機種名</th>
+                    <th>種類</th>
+                    <th>廃棄数量</th>
+                    <th>廃棄理由</th>
+                    <th>登録者</th>
+                    <th>備考</th>
+                  </tr>
+                </thead>
+                <tbody id="dispose-list-body">
+                  <tr>
+                    <td colspan="8" class="loading">読み込み中...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- 発注状況管理（別ページ・管理者ステータス変更） -->
+        <div id="s-order-status" class="screen">
+          <div id="os-admin-banner" class="card"
+            style="background:var(--blue-bg);border-color:#B5D4F4;margin-bottom:12px;display:none;">
+            <div style="font-size:14px;color:var(--blue-text);">🔑 管理者権限：ステータスの変更・承認・却下ができます。変更日時は自動で記録されます。</div>
+          </div>
+          <div class="search-bar">
+            <select class="sel" id="os-filter" onchange="renderOrderStatus()">
+              <option value="">全ステータス</option>
+              <option value="pending">審査中</option>
+              <option value="approved">承認済み</option>
+              <option value="ordered">発注済み</option>
+              <option value="arrived">到着済み</option>
+              <option value="rejected">却下</option>
+            </select>
+            <select class="sel" id="os-type-filter" onchange="renderOrderStatus()">
+              <option value="">全種別</option>
+              <option value="新規導入">新規導入</option>
+              <option value="不足補充">不足補充</option>
+            </select>
+            <input class="inp" id="os-search" placeholder="メーカー・機種名・申請者で検索..." style="flex:1;"
+              oninput="renderOrderStatus()">
+          </div>
+          <!-- 集計カード -->
+          <div class="row4" style="margin-bottom:12px;" id="os-summary-cards"></div>
+          <div class="card" style="padding:0;">
+            <div class="tbl-wrap">
+              <table class="tbl">
+                <thead>
+                  <tr>
+                    <th>種別</th>
+                    <th>設備種類</th>
+                    <th>メーカー・機種名</th>
+                    <th>数量</th>
+                    <th>金額</th>
+                    <th>申請者</th>
+                    <th>申請日</th>
+                    <th>ステータス</th>
+                    <th>最終更新</th>
+                    <th>更新者</th>
+                    <th>備考</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="order-status-body">
+                  <tr>
+                    <td colspan="12" class="loading">読み込み中...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- 棚卸し -->
+        <div id="s-inventory" class="screen">
+          <div class="card" style="background:var(--blue-bg);border-color:#B5D4F4;margin-bottom:12px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <div>
+                <div style="font-size:13px;font-weight:600;color:var(--blue-text);margin-bottom:4px;">棚卸しモード</div>
+                <div style="font-size:14px;color:#185FA5;">実際の在庫数を入力・確認し、確認者と日時を記録します。</div>
+              </div>
+              <button class="btn btn-primary btn-sm" onclick="applyAllInventory()">差異を一括修正する</button>
+            </div>
+          </div>
+          <div class="card" style="padding:0;">
+            <div class="tbl-wrap">
+              <table class="tbl">
+                <thead>
+                  <tr>
+                    <th>管理番号</th>
+                    <th>メーカー・機種名</th>
+                    <th>システム在庫</th>
+                    <th>実カウント</th>
+                    <th>差異</th>
+                    <th>確認利用状態</th>
+                    <th>確認者</th>
+                    <th>確認日時</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="inv-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- 発注申請 -->
+        <div id="s-order" class="screen">
+          <div id="order-notifs" style="margin-bottom:12px;"></div>
+          <div id="order-alerts" style="margin-bottom:12px;"></div>
+          <!-- 新規申請フォーム -->
+          <div class="card">
+            <div class="section-header">
+              <div class="section-title">新規発注申請</div>
+              <button class="btn btn-sm" onclick="navTo('order-status')" style="font-size:14px;">📋 発注状況管理ページへ
+                →</button>
+            </div>
+            <div style="font-size:14px;color:var(--text2);margin-bottom:12px;">
+              新しく導入したい設備や不足している設備を申請できます。申請後、管理者に通知されます。</div>
+            <div class="form-grid3">
+              <div class="form-group">
+                <div class="form-label">申請種別 *</div>
+                <select class="form-sel" id="nr-type">
+                  <option value="新規導入">新規導入したい設備</option>
+                  <option value="不足補充">不足している設備の補充</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <div class="form-label">設備種類 *</div>
+                <select class="form-sel" id="nr-category">
+                  <option value="">-- 選択 --</option>
+                  <option>ノートPC</option>
+                  <option>デスクトップ</option>
+                  <option>モニター</option>
+                  <option>キーボード</option>
+                  <option>マウス</option>
+                  <option>ヘッドホン</option>
+                  <option>ウェブカメラ</option>
+                  <option>USBメモリ</option>
+                  <option>その他</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <div class="form-label">メーカー・機種名 *</div>
+                <input class="form-inp" id="nr-name" placeholder="例：ノートPC、Logicoolマウス">
+              </div>
+              <div class="form-group">
+                <div class="form-label">申請数量</div>
+                <input class="form-inp" type="number" id="nr-qty" value="1" min="1">
+              </div>
+              <div class="form-group">
+                <div class="form-label">想定金額（円）</div>
+                <input class="form-inp" type="number" id="nr-price" placeholder="例：80000">
+              </div>
+              <div class="form-group">
+                <div class="form-label">希望納期</div>
+                <input class="form-inp" type="date" id="nr-due">
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom:12px;">
+              <div class="form-label">利用用途・理由（メモ）</div>
+              <input class="form-inp" id="nr-note" placeholder="例：新メンバー加入のため、現在の機器が老朽化したため">
+            </div>
+            <div style="font-size:14px;color:var(--text3);margin-bottom:8px;">申請者：<span id="nr-requester">—</span></div>
+            <button class="btn btn-primary" onclick="submitNewOrderRequest()">発注申請する</button>
+          </div>
+          <!-- 申請一覧 -->
+          <div class="card" style="padding:0;">
+            <div style="padding:12px 16px;font-size:14px;font-weight:600;border-bottom:0.5px solid var(--border);">
+              発注申請一覧</div>
+            <div class="tbl-wrap">
+              <table class="tbl">
+                <thead>
+                  <tr>
+                    <th>種別</th>
+                    <th>設備種類</th>
+                    <th>メーカー・機種名</th>
+                    <th>数量</th>
+                    <th>金額</th>
+                    <th>用途・理由</th>
+                    <th>申請者</th>
+                    <th>申請日</th>
+                    <th>ステータス</th>
+                  </tr>
+                </thead>
+                <tbody id="order-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- 廃棄管理 -->
+        <div id="s-dispose" class="screen">
+          <div class="row2" style="margin-bottom:12px;">
+            <div class="card">
+              <div style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--red-text);">廃棄登録</div>
+              <div class="form-group" style="margin-bottom:8px;">
+                <div class="form-label">設備（管理番号で検索）</div>
+                <input class="form-inp" id="disp-code-search" placeholder="管理番号 例：EQ-001"
+                  oninput="filterEquipSelect('disp','disp-device',this.value)">
+              </div>
+              <div class="form-group" style="margin-bottom:8px;">
+                <div class="form-label">設備選択</div>
+                <select class="form-sel" id="disp-device" onchange="showDisposeStock()"></select>
+              </div>
+              <div id="disp-stock-info" style="font-size:14px;color:var(--text2);margin-bottom:6px;"></div>
+              <div class="form-group" style="margin-bottom:8px;">
+                <div class="form-label">廃棄数量</div><input class="form-inp" type="number" id="disp-qty" value="1" min="1">
+              </div>
+              <div class="form-group" style="margin-bottom:8px;">
+                <div class="form-label">廃棄理由</div>
+                <select class="form-sel" id="disp-reason">
+                  <option>故障・修理不可</option>
+                  <option>老朽化</option>
+                  <option>不要品</option>
+                  <option>その他</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin-bottom:8px;">
+                <div class="form-label">廃棄日</div><input class="form-inp" type="date" id="disp-date">
+              </div>
+              <div class="form-group" style="margin-bottom:12px;">
+                <div class="form-label">備考</div><input class="form-inp" id="disp-note" placeholder="詳細など">
+              </div>
+              <div style="font-size:14px;color:var(--text3);margin-bottom:6px;">登録者：<span id="disp-recorder">—</span>
+              </div>
+              <button class="btn btn-danger" style="width:100%;" onclick="doDispose()">廃棄登録する</button>
+            </div>
+            <div class="card"
+              style="display:flex;flex-direction:column;justify-content:center;align-items:center;gap:10px;text-align:center;">
+              <div style="font-size:28px;">🗑️</div>
+              <div style="font-size:14px;color:var(--text2);line-height:1.8;">
+                廃棄すると在庫数が減少します。<br>全数廃棄の場合は在庫数が0になり<br>ステータスが「廃棄」になります。</div>
+              <button class="btn btn-primary btn-sm" onclick="navTo('order')">発注管理ページへ →</button>
+            </div>
+          </div>
+          <div class="card" style="padding:0;">
+            <div style="padding:12px 16px;font-size:14px;font-weight:600;border-bottom:0.5px solid var(--border);">廃棄履歴
+            </div>
+            <div class="tbl-wrap">
+              <table class="tbl">
+                <thead>
+                  <tr>
+                    <th>廃棄日</th>
+                    <th>管理番号</th>
+                    <th>メーカー・機種名</th>
+                    <th>廃棄数</th>
+                    <th>廃棄理由</th>
+                    <th>登録者</th>
+                    <th>備考</th>
+                  </tr>
+                </thead>
+                <tbody id="dispose-history"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- 従業員一覧 -->
+        <div id="s-employees" class="screen">
+          <div class="search-bar">
+            <input class="inp" id="emp-search" placeholder="氏名・メール・部門・事業所で検索..." style="flex:1;min-width:200px;"
+              oninput="renderEmployees()">
+            <select class="sel" id="emp-dept-filter" onchange="renderEmployees()">
+              <option value="">全部門</option>
+            </select>
+          </div>
+          <div class="card" style="padding:0;">
+            <div class="tbl-wrap">
+              <table class="tbl">
+                <thead>
+                  <tr>
+                    <th>氏名</th>
+                    <th>メール</th>
+                    <th>部門</th>
+                    <th>事業所</th>
+                    <th>権限</th>
+                  </tr>
+                </thead>
+                <tbody id="employee-body">
+                  <tr>
+                    <td colspan="6" class="loading">読み込み中...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- 権限管理（管理者のみ） -->
+        <div id="s-users" class="screen">
+          <div class="card" style="background:var(--amber-bg);border-color:#FAC775;margin-bottom:12px;">
+            <div style="font-size:14px;color:var(--amber-text);">🔒 このページは管理者のみアクセスできます。</div>
+          </div>
+          <!-- 新規アカウント作成（管理者のみ） -->
+          <div class="card" style="margin-bottom:12px;">
+            <div class="section-header">
+              <div class="section-title">新規アカウント作成</div>
+            </div>
+            <div class="form-grid3">
+              <div class="form-group">
+                <div class="form-label">氏名 *</div><input class="form-inp" id="nu-name" placeholder="例：山田 太郎"
+                  autocomplete="off">
+              </div>
+              <div class="form-group">
+                <div class="form-label">メールアドレス *</div><input class="form-inp" type="email" id="nu-email"
+                  placeholder="your@email.com" autocomplete="off">
+              </div>
+              <div class="form-group">
+                <div class="form-label">パスワード *（8文字以上）</div><input class="form-inp" type="password" id="nu-pass"
+                  placeholder="パスワード" autocomplete="new-password">
+              </div>
+              <div class="form-group">
+                <div class="form-label">部門</div>
+                <select class="form-sel" id="nu-dept">
+                  <option value="">-- 選択 --</option>
+                  <option value="営業部">営業部</option>
+                  <option value="システム管理部">システム管理部</option>
+                  <option value="人事">人事</option>
+                  <option value="社労士部門">社労士部門</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <div class="form-label">事業所</div>
+                <select class="form-sel" id="nu-office">
+                  <option value="">-- 選択 --</option>
+                  <option value="日比谷">日比谷</option>
+                  <option value="日本橋">日本橋</option>
+                  <option value="在宅">在宅</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <div class="form-label">権限</div>
+                <select class="form-sel" id="nu-role">
+                  <option value="viewer">閲覧のみ</option>
+                  <option value="operator">入出庫可</option>
+                  <option value="editor">マスタ編集</option>
+                  <option value="admin">管理者</option>
+                </select>
+              </div>
+            </div>
+            <div id="nu-err" style="margin-bottom:8px;"></div>
+            <button class="btn btn-primary" onclick="createNewUser()">アカウントを作成する</button>
+          </div>
+          <!-- 権限レベル定義 -->
+          <div class="card" style="margin-bottom:12px;">
+            <div style="font-size:14px;font-weight:600;margin-bottom:12px;">権限レベル定義</div>
+            <div class="perm-grid">
+              <div class="perm-head" style="text-align:left;">操作</div>
+              <div class="perm-head">閲覧のみ</div>
+              <div class="perm-head">入出庫可</div>
+              <div class="perm-head">マスタ編集</div>
+              <div class="perm-head">管理者</div>
+              <div class="perm-label">在庫一覧・参照</div>
+              <div class="perm-cell"><span class="ck">✓</span></div>
+              <div class="perm-cell"><span class="ck">✓</span></div>
+              <div class="perm-cell"><span class="ck">✓</span></div>
+              <div class="perm-cell"><span class="ck">✓</span></div>
+              <div class="perm-label">入庫登録</div>
+              <div class="perm-cell"><span class="cno">—</span></div>
+              <div class="perm-cell"><span class="ck">✓</span></div>
+              <div class="perm-cell"><span class="ck">✓</span></div>
+              <div class="perm-cell"><span class="ck">✓</span></div>
+              <div class="perm-label">設備マスタ編集</div>
+              <div class="perm-cell"><span class="cno">—</span></div>
+              <div class="perm-cell"><span class="cno">—</span></div>
+              <div class="perm-cell"><span class="ck">✓</span></div>
+              <div class="perm-cell"><span class="ck">✓</span></div>
+              <div class="perm-label">廃棄・棚卸し</div>
+              <div class="perm-cell"><span class="cno">—</span></div>
+              <div class="perm-cell"><span class="cno">—</span></div>
+              <div class="perm-cell"><span class="ck">✓</span></div>
+              <div class="perm-cell"><span class="ck">✓</span></div>
+              <div class="perm-label">発注申請</div>
+              <div class="perm-cell"><span class="cno">—</span></div>
+              <div class="perm-cell"><span class="ck">✓</span></div>
+              <div class="perm-cell"><span class="ck">✓</span></div>
+              <div class="perm-cell"><span class="ck">✓</span></div>
+              <div class="perm-label">発注承認・実行</div>
+              <div class="perm-cell"><span class="cno">—</span></div>
+              <div class="perm-cell"><span class="cno">—</span></div>
+              <div class="perm-cell"><span class="cno">—</span></div>
+              <div class="perm-cell"><span class="ck">✓</span></div>
+              <div class="perm-label">ユーザー・権限管理</div>
+              <div class="perm-cell"><span class="cno">—</span></div>
+              <div class="perm-cell"><span class="cno">—</span></div>
+              <div class="perm-cell"><span class="cno">—</span></div>
+              <div class="perm-cell"><span class="ck">✓</span></div>
+              <div class="perm-label">アカウント削除</div>
+              <div class="perm-cell"><span class="cno">—</span></div>
+              <div class="perm-cell"><span class="cno">—</span></div>
+              <div class="perm-cell"><span class="cno">—</span></div>
+              <div class="perm-cell"><span class="ck">✓</span></div>
+            </div>
+          </div>
+          <!-- ユーザー一覧 -->
+          <div class="card" style="padding:0;">
+            <div style="padding:12px 16px;font-size:14px;font-weight:600;border-bottom:0.5px solid var(--border);">
+              ユーザー一覧</div>
+            <div class="tbl-wrap">
+              <table class="tbl">
+                <thead>
+                  <tr>
+                    <th>氏名</th>
+                    <th>メール</th>
+                    <th>部門</th>
+                    <th>事業所</th>
+                    <th>権限</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="user-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- アカウント設定 -->
+        <div id="s-myaccount" class="screen">
+          <div class="card" style="max-width:480px;">
+
+            <div style="margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border);">
+              <div style="font-size: 13px; color: var(--text3); margin-bottom: 4px;">ログイン中のアカウント</div>
+              <div style="font-size: 18px; font-weight: 600; color: var(--text);" id="my-info-name">—</div>
+              <div style="font-size: 14px; color: var(--text2);" id="my-info-email">—</div>
+            </div>
+
+
+
+
+            <div class="section-header" style="margin-bottom:16px;">
+              <div class="section-title">🔑 パスワード変更</div>
+            </div>
+            <div class="form-group" style="margin-bottom:12px;">
+              <div class="form-label">現在のパスワード *</div>
+              <input class="form-inp" type="password" id="my-pass-current" placeholder="現在のパスワード" autocomplete="current-password">
+            </div>
+            <div class="form-group" style="margin-bottom:12px;">
+              <div class="form-label">新しいパスワード *（8文字以上）</div>
+              <input class="form-inp" type="password" id="my-pass-new" placeholder="新しいパスワード" autocomplete="new-password">
+            </div>
+            <div class="form-group" style="margin-bottom:16px;">
+              <div class="form-label">確認用（再入力）</div>
+              <input class="form-inp" type="password" id="my-pass-confirm" placeholder="新しいパスワードを再入力" autocomplete="new-password">
+            </div>
+            <div id="my-pass-err" style="margin-bottom:8px;"></div>
+            <button class="btn btn-primary" onclick="doChangeMyPassword()">パスワードを変更する</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- 設備モーダル -->
+  <div class="modal-bg" id="equip-modal">
+    <div class="modal">
+      <div class="modal-title" id="equip-modal-title">設備 新規登録</div>
+      <div id="equip-modal-err"></div>
+      <div class="form-grid">
+        <div class="form-group">
+          <div class="form-label">管理番号 *</div><input class="form-inp" id="f-code" placeholder="EQ-001">
+        </div>
+        <div class="form-group">
+          <div class="form-label">メーカー・機種名 *</div><input class="form-inp" id="f-name" placeholder="例：ノートPC">
+        </div>
+        <div class="form-group">
+          <div class="form-label">種類</div>
+          <select class="form-sel" id="f-cat">
+            <option>ノートPC</option>
+                <option>デスクトップ</option>
+                <option>モニター</option>
+                <option>キーボード</option>
+                <option>マウス</option>
+                <option>ヘッドホン</option>
+                <option>ウェブカメラ</option>
+                <option>USBメモリ</option>
+                <option>その他</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <div class="form-label">使用者</div>
+          <div class="user-picker" id="f-user-picker">
+            <button type="button" class="user-picker-btn" onclick="toggleUserPicker('f-user-picker')">
+              <span id="f-user-label">-- 使用者を選択（任意）--</span>
+              <span>▾</span>
+            </button>
+            <div class="user-picker-dropdown" id="f-user-dropdown">
+              <div class="user-picker-list" id="f-user-list"></div>
+            </div>
+          </div>
+          <input type="hidden" id="f-user" value="">
+        </div>
+        <div class="form-group">
+          <div class="form-label">保管・使用場所</div><input class="form-inp" id="f-place" placeholder="例：倉庫A">
+        </div>
+        <div class="form-group">
+          <div class="form-label">利用状態</div>
+          <select class="form-sel" id="f-status">
+            <option>使用中</option>
+            <option>未使用</option>
+            <option>不明</option>
+            <option>故障中</option>
+            <option>廃棄</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <div class="form-label">在庫数</div><input class="form-inp" type="number" id="f-qty" value="1" min="0">
+        </div>
+        <div class="form-group">
+          <div class="form-label">適正在庫数</div><input class="form-inp" type="number" id="f-minqty" value="1" min="0">
+        </div>
+        <div class="form-group">
+          <div class="form-label">購入日</div><input class="form-inp" type="date" id="f-date">
+        </div>
+        <div class="form-group">
+          <div class="form-label">シリアルNO</div><input class="form-inp" id="f-notes" placeholder="英数字シリアル番号">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeEquipModal()">キャンセル</button>
+        <button class="btn btn-primary" id="equip-modal-btn" onclick="saveEquip()">登録する</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 棚卸し確認モーダル -->
+  <div class="modal-bg" id="inv-modal">
+    <div class="modal">
+      <div class="modal-title">棚卸し確認</div>
+      <div id="inv-modal-info"
+        style="background:var(--bg3);border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:14px;"></div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <div class="form-label">実カウント数</div><input class="form-inp" type="number" id="ivm-qty" value="0" min="0">
+      </div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <div class="form-label">確認者名</div><input class="form-inp" id="ivm-checker" placeholder="確認者の氏名">
+      </div>
+      <div style="font-size:14px;color:var(--text3);margin-bottom:4px;">確認日時：<span id="ivm-datetime">—</span></div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeInvModal()">キャンセル</button>
+        <button class="btn btn-success" onclick="confirmInventory()">確認・記録する</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- アカウント削除確認モーダル（二重確認） -->
+  <div class="modal-bg" id="delete-user-modal">
+    <div class="confirm-box">
+      <div class="confirm-title" style="color:var(--red-text);">⚠️ アカウント削除の確認</div>
+      <div class="confirm-msg" id="delete-user-msg"></div>
+      <div class="form-group" style="margin-bottom:16px;">
+        <div class="form-label">確認のため「削除する」と入力してください</div>
+        <input class="form-inp" id="delete-confirm-input" placeholder="削除する" oninput="checkDeleteInput()">
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;">
+        <button class="btn" onclick="closeDeleteModal()">キャンセル</button>
+        <button class="btn btn-danger" id="delete-confirm-btn" disabled onclick="executeDeleteUser()">削除する</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 到着済み→入庫登録確認モーダル -->
+  <div class="modal-bg" id="arrived-modal">
+    <div class="confirm-box">
+      <div class="confirm-title" style="color:var(--teal-text);">📦 入庫登録しますか？</div>
+      <div class="confirm-msg" id="arrived-modal-msg"></div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;">
+        <button class="btn" onclick="closeArrivedModal()">いいえ（後で登録）</button>
+        <button class="btn btn-success" onclick="goToInboundFromArrived()">はい、入庫登録画面へ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- パスワード変更モーダル -->
+  <div class="modal-bg" id="change-pass-modal">
+    <div class="confirm-box">
+      <div class="confirm-title">🔑 パスワード変更</div>
+      <div class="confirm-msg" id="change-pass-msg" style="margin-bottom:12px;"></div>
+      <div class="form-group" style="margin-bottom:10px;">
+        <div class="form-label">新しいパスワード *（8文字以上）</div>
+        <input class="form-inp" type="password" id="change-pass-new" placeholder="新しいパスワード" autocomplete="new-password">
+      </div>
+      <div class="form-group" style="margin-bottom:16px;">
+        <div class="form-label">確認用（同じパスワードを再入力）</div>
+        <input class="form-inp" type="password" id="change-pass-confirm" placeholder="パスワードを再入力" autocomplete="new-password">
+      </div>
+      <div id="change-pass-err" style="margin-bottom:8px;"></div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;">
+        <button class="btn" onclick="closeChangePassModal()">キャンセル</button>
+        <button class="btn btn-primary" onclick="executeChangePassword()">変更する</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ============================================================
+    // Supabase 設定
+    // ============================================================
+    const SUPABASE_URL = 'https://zffoaelhfskphgihbsll.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpmZm9hZWxoZnNrcGhnaWhic2xsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYxODk2MjMsImV4cCI6MjA5MTc2NTYyM30.VbH19CiSqOgRwS8jLCP9gZjphq8RWj72hKCWMaP4NJ4';
+    const { createClient } = supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const TODAY = new Date().toISOString().split('T')[0];
+    const ROLE_LABELS = { viewer: '閲覧のみ', operator: '入出庫可', editor: 'マスタ編集', admin: '管理者' };
+    const CATEGORIES = ['ノートPC', 'デスクトップ', 'モニター', 'キーボード', 'マウス', 'ヘッドホン', 'ウェブカメラ', 'USBメモリ','その他'];
+
+    let allEquipment = [];
+    let allEmployees = [];
+    let invCounts = {};
+    let invChecked = {};
+    let editEquipId = null;
+    let currentUser = null;
+    let currentUserRole = 'viewer';
+    let currentUserName = '—';
+    let invModalEquipId = null;
+    let deleteTargetUserId = null;
+
+    // ============================================================
+    // 備考の短縮表示（8文字まで表示、残りはtitleでホバー表示）
+    // ============================================================
+    function truncRemark(text) {
+      if (!text) return '<span style="color:var(--text3);">—</span>';
+      const short = text.length > 8 ? text.slice(0, 8) + '…' : text;
+      const escaped = text.replace(/"/g, '&quot;');
+      return `<span title="${escaped}" style="cursor:default;">${short}</span>`;
+    }
+
+    // ============================================================
+    // 権限チェック（ロール別制御）
+    // ============================================================
+    const can = {
+      view: () => true,
+      inout: () => ['operator', 'editor', 'admin'].includes(currentUserRole),
+      edit: () => ['editor', 'admin'].includes(currentUserRole),
+      dispose: () => ['editor', 'admin'].includes(currentUserRole),
+      order: () => ['operator', 'editor', 'admin'].includes(currentUserRole),
+      orderApprove: () => currentUserRole === 'admin',
+      admin: () => currentUserRole === 'admin',
+    };
+
+    // ============================================================
+    // 初期化
+    // ============================================================
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('in-date').value = TODAY;
+      document.getElementById('disp-date').value = TODAY;
+      document.getElementById('f-date').value = TODAY;
+      document.getElementById('nr-due').value = TODAY;
+
+      document.querySelectorAll('.nav-item').forEach(el => {
+        el.addEventListener('click', () => {
+          const screen = el.dataset.screen;
+          if (screen === 'users' && !can.admin()) { showToast('管理者のみアクセスできます', false); return; }
+          navTo(screen);
+        });
+      });
+    });
+
+    // ============================================================
+    // ナビゲーション
+    // ============================================================
+    const PAGE_TITLES = {
+      dashboard: 'ダッシュボード', master: '設備管理', inout: '入庫管理',
+      inventory: '棚卸し支援', order: '発注申請',
+      'order-status': '発注状況管理', 'dispose-list': '廃棄一覧',
+      dispose: '廃棄登録', employees: '従業員一覧', users: '権限管理',
+      myaccount: 'アカウント設定'
+    };
+
+    function navTo(id) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('on'));
+      document.getElementById('s-' + id)?.classList.add('on');
+      document.querySelector(`.nav-item[data-screen="${id}"]`)?.classList.add('on');
+      document.getElementById('page-title').textContent = PAGE_TITLES[id] || id;
+      const loaders = {
+        dashboard: loadDashboard, master: loadMaster, inout: loadInout,
+        inventory: loadInventory, order: loadOrder,
+        'order-status': loadOrderStatus, 'dispose-list': loadDisposeList,
+        dispose: loadDispose, employees: loadEmployees, users: loadUsers,
+        myaccount: loadMyAccount
+      };
+      loaders[id]?.();
+    }
+
+    function applyRoleUI() {
+      // 権限管理メニューは管理者のみ表示
+      const navUsers = document.getElementById('nav-users');
+      can.admin() ? navUsers.classList.remove('hidden') : navUsers.classList.add('hidden');
+    }
+
+    // ============================================================
+    // ユーティリティ
+    // ============================================================
+    function statusBadge(s) {
+      const m = { '使用中': 'b-in', '保管中': 'b-idle', '修理中': 'b-broken', '故障中': 'b-out', '廃棄': 'b-disposed' };
+      return `<span class="badge ${m[s] || 'b-idle'}">${s}</span>`;
+    }
+
+    function showToast(msg, ok = true) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.style.background = ok ? 'var(--teal)' : 'var(--amber)';
+      t.style.color = '#fff';
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2800);
+    }
+
+    function showErr(el, msg) {
+      document.getElementById(el).innerHTML = `<div class="error-msg">${msg}</div>`;
+    }
+
+    function fmtDatetime(ts) {
+      if (!ts) return '—';
+      const d = new Date(ts);
+      return d.toLocaleDateString('ja-JP') + ' ' + d.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    // ============================================================
+    // ダッシュボード
+    // ============================================================
+    async function loadDashboard() {
+      try {
+        const [{ data: eqs }, { data: logs }, { data: disp }, { data: orders }] = await Promise.all([
+          db.from('equipment').select('*'),
+          db.from('inout_log').select('*, equipment(name,code)').order('created_at', { ascending: false }).limit(5),
+          db.from('dispose_log').select('*').gte('dispose_date', TODAY.slice(0, 7) + '-01'),
+          db.from('order_requests').select('*').order('created_at', { ascending: false }).limit(20)
+        ]);
+
+        allEquipment = eqs || [];
+
+        document.getElementById('d-total').textContent = allEquipment.length;
+        document.getElementById('d-inuse').textContent = allEquipment.filter(e => e.status === '使用中').length;
+        document.getElementById('d-disposed').textContent = (disp || []).length;
+
+
+        // 発注申請通知（管理者：承認待ち通知）
+        const pendingOrders = (orders || []).filter(r => r.status === 'pending');
+        if (can.orderApprove() && pendingOrders.length > 0) {
+          document.getElementById('dash-order-notifs').innerHTML =
+            `<div class="notif-banner"><div class="notif-dot"></div>
+ <div class="notif-text">承認待ちの発注申請が <strong>${pendingOrders.length}件</strong> あります。</div>
+ <button class="alert-btn" style="border-color:#B5D4F4;color:var(--blue-text);" onclick="navTo('order-status')">確認する</button></div>`;
+        } else {
+          document.getElementById('dash-order-notifs').innerHTML = '';
+        }
+
+        // 「到着済み」以外の申請を抽出（最大3件）
+        const recentOrders = (orders || [])
+          .filter(r => r.status !== 'arrived') // ここで「到着済み」を完全に除外
+          .slice(0, 3); // 残ったものから直近3件を取得
+
+        // 有効なデータが1件以上ある場合のみ、カードを表示する
+        if (recentOrders.length > 0) {
+          document.getElementById('dash-new-orders').innerHTML =
+            `<div class="card" style="margin-bottom:0;">
+      <div style="font-size:14px;font-weight:600;margin-bottom:10px;">📋 最近の発注申請 <button class="btn btn-sm" onclick="navTo('order-status')" style="margin-left:8px;font-size:14px;">発注状況管理 →</button></div>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>種別</th><th>メーカー・機種名</th><th>数量</th><th>金額</th><th>申請者</th><th>ステータス</th><th>申請日</th></tr></thead>
+        <tbody>
+          ${recentOrders.map(r => {
+              const stBadge = orderStatusBadge(r.status);
+              return `<tr>
+              <td><span class="badge ${r.request_type === '新規導入' ? 'status-new' : 'status-shortage'}">${r.request_type || '—'}</span></td>
+              <td style="font-weight:500;">${r.equipment_name}</td>
+              <td>${r.quantity}</td>
+              <td>${r.estimated_price ? '¥' + Number(r.estimated_price).toLocaleString() : '—'}</td>
+              <td>${r.requester}</td>
+              <td>${stBadge}</td>
+              <td>${r.created_at?.slice(0, 10) || '—'}</td>
+            </tr>`;
+            }).join('')}
+        </tbody>
+      </table></div>
+    </div>`;
+        } else {
+          // 全て到着済み、または申請が0件の場合は空にする
+          document.getElementById('dash-new-orders').innerHTML = '';
+        }
+
+        document.getElementById('d-recent').innerHTML = (logs || []).map(l => {
+  const biko = l.remarks || l.notes || "";
+  // 設備が廃棄・削除されても eq_code / eq_name にフォールバック
+  const code = l.equipment?.code || l.eq_code || '—';
+  const name = l.equipment?.name || l.eq_name || '—';
+
+  return `<tr>
+    <td style="font-family:monospace;font-size:14px;">${code}</td>
+    <td>${name}</td>
+    <td>${l.quantity}</td>
+    <td style="font-size:14px;">${l.recorded_by || '—'}</td>
+    <td>${l.date}</td>
+  </tr>`;
+}).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:12px;">履歴なし</td></tr>';
+
+
+
+
+        const cats = {};
+        allEquipment.forEach(e => { cats[e.category] = (cats[e.category] || 0) + e.quantity; });
+        const max = Math.max(1, ...Object.values(cats));
+        document.getElementById('d-category').innerHTML = CATEGORIES.map(k =>
+          `<div style="margin-bottom:8px;">
+         <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:3px;"><span>${k}</span><span style="font-weight:600;">${cats[k] || 0}点</span></div>
+         <div class="progress-bar"><div class="progress-fill" style="width:${Math.round((cats[k] || 0) / max * 100)}%;"></div></div>
+       </div>`
+        ).join('');
+      } catch (e) {
+        document.getElementById('d-recent').innerHTML = `<tr><td colspan="5" style="color:var(--red-text);padding:8px;">接続エラー: ${e.message}</td></tr>`;
+      }
+    }
+
+    // ============================================================
+    // 設備マスタ
+    // ============================================================
+    // 設備マスタの読み込み
+    async function loadMaster() {
+      // 1. まずデータを取得（これは元のまま）
+      const { data: eqData, error: eqError } = await db.from('equipment').select('*').order('code');
+      if (eqError) { showErr('master-body', eqError.message); return; }
+      allEquipment = eqData || [];
+
+      // 2. 使用者（フルネーム＋スペースなし）検索用のプルダウンだけを更新（エラーが出ても無視する設定）
+      try {
+        const { data: usersForFilter } = await db.from('users').select('name').order('name');
+        const mUserSelect = document.getElementById('m-user');
+        if (mUserSelect && usersForFilter) {
+          mUserSelect.innerHTML = '<option value="">全使用者</option>' +
+            usersForFilter.map(u => `<option value="${u.name}">${u.name}</option>`).join('');
+        }
+      } catch (e) { console.log("Filter update skip"); }
+
+      // 3. 描画
+      renderMaster();
+    }
+
+    // 設備一覧の表示（絞り込み）
+    // 776行目付近の renderMaster 関数を以下に差し替え
+function renderMaster() {
+  const q = (document.getElementById('m-search')?.value || '').toLowerCase();
+  const cat = document.getElementById('m-cat')?.value || '';
+  const uFilt = document.getElementById('m-user')?.value || '';
+  // --- 追加：保管場所の取得 ---
+  const locFilt = document.getElementById('m-map')?.value || ''; 
+
+  const rows = allEquipment.filter(e => {
+    // キーワード検索（名称、管理番号、使用者）
+    const matchQ = !q || 
+                   e.name.toLowerCase().includes(q) || 
+                   (e.code || '').toLowerCase().includes(q) || 
+                   (e.assigned_user || '').toLowerCase().includes(q);
+    
+    // 種類絞り込み
+    const matchC = !cat || e.category === cat;
+    
+    // 使用者絞り込み
+    const matchU = !uFilt || e.assigned_user === uFilt;
+
+    // --- 追加：保管場所絞り込み ---
+    // データベース上のカラム名が 'location' であると仮定しています
+    const matchL = !locFilt || e.location === locFilt;
+
+    return matchQ && matchC && matchU && matchL; // 全ての条件が一致するもの
+  });
+
+  const masterBody = document.getElementById('master-body');
+  if (!masterBody) return;
+
+  masterBody.innerHTML = rows.length
+    ? rows.map(e => `<tr>
+    <td style="font-family:monospace;font-size:14px;">${e.code || '—'}</td>
+    <td style="font-weight:500;">${e.name}</td>
+    <td><span class="badge b-idle" style="font-size:14px;">${e.category}</span></td>
+    <td>${e.assigned_user || '—'}</td>
+    <td>${e.location || '—'}</td>
+    <td style="font-family:monospace;font-size:18px;color:var(--text2);">${truncRemark(e.notes)}</td>
+    <td>${statusBadge(e.status)}</td>
+    <td>${e.purchase_date || '—'}</td>
+    <td><button class="btn btn-sm" onclick="openEquipModal('${e.id}')">編集</button></td>
+    <td>${can.edit() ? `<button class="btn btn-sm btn-danger" onclick="deleteEquipment('${e.id}', '${e.name}')">削除</button>` : '—'}</td>
+  </tr>`).join('')
+    : '<tr><td colspan="10" style="text-align:center;color:var(--text3);padding:16px;">該当なし</td></tr>';
+}
+
+    async function openEquipModal(id = null) {
+      editEquipId = id;
+      document.getElementById('equip-modal-err').innerHTML = '';
+      // 従業員セレクトを先に更新
+      await populateUserSelects();
+      if (id) {
+        const e = allEquipment.find(x => x.id === id);
+        document.getElementById('equip-modal-title').textContent = '設備編集 — ' + e.name;
+        document.getElementById('equip-modal-btn').textContent = '保存する';
+        document.getElementById('f-code').value = e.code || '';
+        document.getElementById('f-name').value = e.name;
+        document.getElementById('f-cat').value = e.category;
+        document.getElementById('f-user').value = e.assigned_user || '';
+        setUserPickerValue('f-user-picker', e.assigned_user || '');
+        document.getElementById('f-place').value = e.location || '';
+        document.getElementById('f-status').value = e.status;
+        document.getElementById('f-qty').value = e.quantity;
+        document.getElementById('f-minqty').value = e.min_quantity;
+        document.getElementById('f-date').value = e.purchase_date || TODAY;
+        document.getElementById('f-notes').value = e.notes || '';
+      } else {
+        document.getElementById('equip-modal-title').textContent = '設備編集';
+        document.getElementById('equip-modal-btn').textContent = '保存する';
+        ['f-code', 'f-name', 'f-place', 'f-notes'].forEach(fid => document.getElementById(fid).value = '');
+        document.getElementById('f-user').value = '';
+        setUserPickerValue('f-user-picker', '');
+        document.getElementById('f-qty').value = 0;
+        document.getElementById('f-minqty').value = 1;
+        document.getElementById('f-date').value = TODAY;
+      }
+      document.getElementById('equip-modal').classList.add('on');
+    }
+    function closeEquipModal() { document.getElementById('equip-modal').classList.remove('on'); }
+
+    async function saveEquip() {
+      const code = document.getElementById('f-code').value.trim();
+      const name = document.getElementById('f-name').value.trim();
+      if (!code || !name) { showErr('equip-modal-err', '管理番号とメーカー・機種名は必須です'); return; }
+      const payload = {
+        code, name,
+        category: document.getElementById('f-cat').value,
+        assigned_user: document.getElementById('f-user').value || null,
+        location: document.getElementById('f-place').value || null,
+        status: document.getElementById('f-status').value,
+        quantity: parseInt(document.getElementById('f-qty').value) || 0,
+        min_quantity: parseInt(document.getElementById('f-minqty').value) || 1,
+        purchase_date: document.getElementById('f-date').value || null,
+        notes: document.getElementById('f-notes').value || null,
+      };
+      try {
+        if (editEquipId) {
+          const { error } = await db.from('equipment').update(payload).eq('id', editEquipId);
+          if (error) throw error;
+          showToast(`「${name}」を更新しました`);
+        } else {
+          const { error } = await db.from('equipment').insert(payload);
+          if (error) throw error;
+          showToast(`「${name}」を登録しました`);
+        }
+        closeEquipModal(); loadMaster();
+      } catch (e) { showErr('equip-modal-err', translateDbError(e.message)); }
+    }
+
+    // 設備を個別に削除する関数
+    async function deleteEquipment(id, name) {
+      if (!can.edit()) { showToast('権限がありません', false); return; }
+
+      if (!confirm(`設備「${name}」を完全に削除しますか？\nこの設備の入出庫履歴や棚卸し記録もすべて削除されます。`)) {
+        return;
+      }
+
+      try {
+        const { error } = await db.from('equipment').delete().eq('id', id);
+        if (error) throw error;
+
+        showToast(`「${name}」を削除しました`);
+        loadMaster(); // 一覧を再読み込み
+      } catch (e) {
+        showToast('削除に失敗しました: ' + e.message, false);
+      }
+    }
+
+    // 【テスト用】全設備データを一括削除する関数（コンソールから実行するか、ボタンを作る）
+    async function deleteAllTestData() {
+      if (currentUserRole !== 'admin') { alert('管理者のみ実行可能です'); return; }
+
+      if (!confirm('【警告】すべての設備データと履歴を削除して初期化しますか？この操作は戻せません。')) {
+        return;
+      }
+
+      try {
+        // 履歴から順番に消さなくても、SQLでCASCADE設定していればequipmentを消すだけでOK
+        const { error } = await db.from('equipment').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        if (error) throw error;
+
+        showToast('テストデータをすべて削除しました');
+        loadMaster();
+        loadDashboard();
+      } catch (e) {
+        alert('一括削除エラー: ' + e.message);
+      }
+    }
+
+    // ============================================================
+    // 従業員セレクト一括更新
+    // ============================================================
+    // カスタム使用者ピッカー
+    // ============================================================
+    function toggleUserPicker(pickerId) {
+      const dropdown = document.getElementById(pickerId.replace('-picker', '-dropdown'));
+      const isOpen = dropdown.classList.contains('open');
+      // 他の全ピッカーを閉じる
+      document.querySelectorAll('.user-picker-dropdown').forEach(d => d.classList.remove('open'));
+      if (!isOpen) dropdown.classList.add('open');
+    }
+
+    function selectUserPickerOption(pickerId, value, label) {
+      const hiddenId  = pickerId === 'in-user-picker' ? 'in-user' : 'f-user';
+      const labelId   = pickerId === 'in-user-picker' ? 'in-user-label' : 'f-user-label';
+      const listId    = pickerId === 'in-user-picker' ? 'in-user-list' : 'f-user-list';
+      document.getElementById(hiddenId).value  = value;
+      document.getElementById(labelId).textContent = label || '-- 使用者を選択（任意）--';
+      document.querySelectorAll(`#${listId} .user-picker-option`).forEach(el => {
+        el.classList.toggle('selected', el.dataset.value === value);
+      });
+      document.getElementById(pickerId.replace('-picker', '-dropdown')).classList.remove('open');
+    }
+
+    function setUserPickerValue(pickerId, value) {
+      const listId  = pickerId === 'in-user-picker' ? 'in-user-list' : 'f-user-list';
+      const labelId = pickerId === 'in-user-picker' ? 'in-user-label' : 'f-user-label';
+      const hiddenId = pickerId === 'in-user-picker' ? 'in-user' : 'f-user';
+      const opt = document.querySelector(`#${listId} [data-value="${value}"]`);
+      document.getElementById(hiddenId).value = value;
+      document.getElementById(labelId).textContent = opt ? opt.textContent : (value || '-- 使用者を選択（任意）--');
+      document.querySelectorAll(`#${listId} .user-picker-option`).forEach(el => {
+        el.classList.toggle('selected', el.dataset.value === value);
+      });
+    }
+
+    function buildUserPickerList(listEl, users) {
+      const items = [
+        { value: '', label: '-- 使用者を選択（任意）--' },
+        { value: 'なし', label: 'なし' },
+        ...users.map(u => ({ value: u.name, label: u.name + (u.department ? `（${u.department}）` : '') }))
+      ];
+      const pickerId = listEl.id === 'in-user-list' ? 'in-user-picker' : 'f-user-picker';
+      listEl.innerHTML = items.map(item =>
+        `<div class="user-picker-option" data-value="${item.value}"
+          onclick="selectUserPickerOption('${pickerId}','${item.value}','${item.label}')">${item.label}</div>`
+      ).join('');
+    }
+
+    async function populateUserSelects() {
+      const { data } = await db.from('users').select('id,name,department').order('name');
+      const users = data || [];
+      ['in-user-list', 'f-user-list'].forEach(listId => {
+        const el = document.getElementById(listId);
+        if (el) buildUserPickerList(el, users);
+      });
+    }
+
+    // クリック外でピッカーを閉じる
+    document.addEventListener('click', e => {
+      if (!e.target.closest('.user-picker')) {
+        document.querySelectorAll('.user-picker-dropdown').forEach(d => d.classList.remove('open'));
+      }
+    });
+
+    // ============================================================
+    // 入庫管理（出庫は非表示）
+    // ============================================================
+    async function loadInout() {
+      if (!can.inout()) {
+        document.getElementById('inout-history').innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--red-text);padding:16px;">入庫登録の権限がありません</td></tr>';
+        return;
+      }
+      document.getElementById('in-recorder').textContent = currentUserName;
+      await populateUserSelects();
+      await renderInoutHistory();
+    }
+
+    async function renderInoutHistory() {
+      const { data } = await db.from('inout_log')
+        .select('*, equipment(name,code)').eq('type', '入庫').order('created_at', { ascending: false }).limit(50);
+      document.getElementById('inout-history').innerHTML = (data || []).map(l => {
+        // 設備が削除されていてもeq_name/eq_codeカラムにフォールバック
+        const code = l.equipment?.code || l.eq_code || '—';
+        const name = l.equipment?.name || l.eq_name || '—';
+        return `<tr>
+          <td>${l.date || TODAY}</td>
+          <td style="font-family:monospace;font-size:14px;">${code}</td>
+          <td>${name}</td>
+          <td>${l.quantity}</td>
+          <td>${l.target_user || '—'}</td>
+          <td style="font-size:18px;">${truncRemark(l.note)}</td>
+          <td style="font-size:18px;">${l.recorded_by || '—'}</td>
+        </tr>`;
+      }).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:12px;">履歴なし</td></tr>';
+    }
+
+    // 種類別プレフィックスマップ（先頭1桁）
+    const CATEGORY_PREFIX = {
+      'ノートPC':      '1',
+      'デスクトップ': '2',
+      'モニター':      '3',
+      'キーボード':    '4',
+      'マウス':        '5',
+      'ヘッドホン':  '6',
+      'ウェブカメラ':        '7',
+      'USBメモリ':     '8',
+      'その他':        '9',
+    };
+
+    async function generateEquipmentCode(category) {
+      const prefix = CATEGORY_PREFIX[category] || '9';
+      const startNum = parseInt(prefix + '00001'); // 例: 100001, 200001...
+
+      // equipment テーブル（現存）と dispose_log（廃棄済み）の両方から
+      // このプレフィックスで使われた番号をすべて収集する
+      const [{ data: eqCodes }, { data: dispCodes }] = await Promise.all([
+        db.from('equipment')
+          .select('code')
+          .like('code', prefix + '_____')
+          .not('code', 'is', null),
+        db.from('dispose_log')
+          .select('equipment_code')
+          .like('equipment_code', prefix + '_____')
+          .not('equipment_code', 'is', null),
+      ]);
+
+      const usedNums = new Set();
+      (eqCodes || []).forEach(r => {
+        const m = r.code?.match(/^(\d{6})$/);
+        if (m) usedNums.add(parseInt(m[1]));
+      });
+      (dispCodes || []).forEach(r => {
+        const m = r.equipment_code?.match(/^(\d{6})$/);
+        if (m) usedNums.add(parseInt(m[1]));
+      });
+
+      // 使われていない最小番号を startNum から順に探す
+      let next = startNum;
+      while (usedNums.has(next)) next++;
+      return next.toString();
+    }
+
+    async function doInbound() {
+      if (!can.inout()) { showToast('権限がありません', false); return; }
+      const category = document.getElementById('in-category').value;
+      const name = document.getElementById('in-name').value.trim();
+      if (!category || !name) { showToast('設備種類とメーカー・機種名は必須です', false); return; }
+      let code = document.getElementById('in-code').value.trim();
+      if (!code) code = await generateEquipmentCode(category);
+      const qty = parseInt(document.getElementById('in-qty').value) || 1;
+      const user = document.getElementById('in-user').value;
+      const location = document.getElementById('in-location').value;
+      const date = document.getElementById('in-date').value || TODAY;
+      const note = document.getElementById('in-note').value;
+      const serialNo = document.getElementById('in-siri').value.trim(); // シリアルNO
+      try {
+        // 既存設備を管理番号で検索
+        const { data: existing } = await db.from('equipment').select('id,quantity,name').eq('code', code).maybeSingle();
+        let equipId;
+        if (existing) {
+          // 既存設備：在庫数を加算、シリアルNOも更新
+          const newQty = existing.quantity + qty;
+          const upd = { quantity: newQty };
+          if (user) upd.assigned_user = user;
+          if (location) upd.location = location;
+          if (serialNo) upd.notes = serialNo; // シリアルNOをnotesに保存
+          await db.from('equipment').update(upd).eq('id', existing.id);
+          equipId = existing.id;
+        } else {
+          // 新規設備：登録（シリアルNOはnotesカラムに保存）
+          const { data: newEq, error } = await db.from('equipment').insert({
+            code, name, category,
+            assigned_user: user || null,
+            location: location || null,
+            status: user && user !== '' ? '使用中' : '保管中',
+            quantity: qty,
+            min_quantity: 1,
+            purchase_date: date,
+            notes: serialNo || null  // シリアルNOをnotesに保存
+          }).select().single();
+          if (error) throw error;
+          equipId = newEq.id;
+        }
+        // 入出庫ログに記録
+        await db.from('inout_log').insert({
+          equipment_id: equipId,
+          type: '入庫',
+          quantity: qty,
+          target_user: user || null,
+          note: note || null,
+          recorded_by: currentUserName,
+          date,
+          eq_name: name,
+          eq_code: code
+        });
+        showToast(`「${name}」を${qty}個入庫しました（管理番号: ${code}）`);
+        document.getElementById('in-code').value = '';
+        document.getElementById('in-name').value = '';
+        document.getElementById('in-user').value = '';
+        setUserPickerValue('in-user-picker', '');
+        document.getElementById('in-siri').value = '';
+        document.getElementById('in-location').value = '';
+        document.getElementById('in-note').value = '';
+        document.getElementById('in-qty').value = 1;
+        await renderInoutHistory();
+      } catch (e) { showToast(translateDbError(e.message), false); }
+    }
+
+    // ============================================================
+    // 廃棄一覧（旧：在庫状況）
+    // ============================================================
+    let allDisposeLogs = [];
+
+    async function loadDisposeList() {
+      // equipment join不要 — dispose_logに保存したequipment_code/categoryを直接使う
+      const { data } = await db.from('dispose_log')
+        .select('*')
+        .order('dispose_date', { ascending: false });
+      allDisposeLogs = data || [];
+      const dlMonth = document.getElementById('dl-month');
+      if (!dlMonth.value) dlMonth.value = TODAY.slice(0, 7);
+      renderDisposeList();
+    }
+
+    function renderDisposeList() {
+      const q = (document.getElementById('dl-search')?.value || '').toLowerCase();
+      const month = document.getElementById('dl-month')?.value || '';
+      const rows = allDisposeLogs.filter(l => {
+        const mq = !q || l.equipment_name.toLowerCase().includes(q) || l.reason.toLowerCase().includes(q) || (l.disposed_by || '').toLowerCase().includes(q) || (l.equipment_code || '').toLowerCase().includes(q);
+        const mm = !month || (l.dispose_date || '').startsWith(month);
+        return mq && mm;
+      });
+      document.getElementById('dl-total').textContent = allDisposeLogs.length + '件';
+      const thisMonth = TODAY.slice(0, 7);
+      const monthRows = allDisposeLogs.filter(l => (l.dispose_date || '').startsWith(thisMonth));
+      document.getElementById('dl-month-count').textContent = monthRows.length + '件';
+      document.getElementById('dl-qty-total').textContent = allDisposeLogs.reduce((s, l) => s + (l.quantity || 1), 0) + '個';
+      document.getElementById('dl-month-qty').textContent = monthRows.reduce((s, l) => s + (l.quantity || 1), 0) + '個';
+
+      document.getElementById('dispose-list-body').innerHTML = rows.length
+        ? rows.map(l => `<tr>
+            <td>${l.dispose_date || '—'}</td>
+            <td style="font-family:monospace;font-size:14px;">${l.equipment_code || '—'}</td>
+            <td style="font-weight:500;">${l.equipment_name}</td>
+            <td><span class="badge b-idle" style="font-size:14px;">${l.category || '—'}</span></td>
+            <td style="font-weight:600;color:var(--red);">${l.quantity || 1}個</td>
+            <td><span class="badge b-out">${l.reason}</span></td>
+            <td>${l.disposed_by}</td>
+            <td style="font-size:18px;">${truncRemark(l.note)}</td>
+          </tr>`).join('')
+        : '<tr><td colspan="8" style="text-align:center;color:var(--text3);padding:16px;">該当なし</td></tr>';
+    }
+
+    // ============================================================
+    // 発注状況管理（別ページ）
+    // ============================================================
+    let allOrderRequests = [];
+
+    const ORDER_STATUSES = [
+      { value: 'pending', label: '審査中', badge: 'b-ordered' },
+      { value: 'approved', label: '承認済み', badge: 'b-blue' },
+      { value: 'ordered', label: '発注済み', badge: 'b-purple' },
+      { value: 'arrived', label: '到着済み', badge: 'b-ok' },
+      { value: 'rejected', label: '却下', badge: 'b-out' },
+    ];
+
+    function orderStatusBadge(status) {
+      const s = ORDER_STATUSES.find(x => x.value === status) || { label: status, badge: 'b-idle' };
+      return `<span class="badge ${s.badge}">${s.label}</span>`;
+    }
+
+    async function loadOrderStatus() {
+      // 管理者バナー表示
+      const banner = document.getElementById('os-admin-banner');
+      if (banner) banner.style.display = can.orderApprove() ? 'block' : 'none';
+
+      const { data } = await db.from('order_requests').select('*').order('created_at', { ascending: false });
+      allOrderRequests = data || [];
+
+      // 集計カード
+      const counts = {};
+      ORDER_STATUSES.forEach(s => { counts[s.value] = 0; });
+      allOrderRequests.forEach(r => { if (counts[r.status] !== undefined) counts[r.status]++; });
+      document.getElementById('os-summary-cards').innerHTML = ORDER_STATUSES.map(s =>
+        `<div class="mc">
+          <div class="mc-v" style="font-size:18px;">${counts[s.value]}</div>
+          <div class="mc-l">${s.label}</div>
+        </div>`
+      ).join('');
+
+      renderOrderStatus();
+    }
+
+    function renderOrderStatus() {
+      const statusFilter = document.getElementById('os-filter')?.value || '';
+      const typeFilter = document.getElementById('os-type-filter')?.value || '';
+      const q = (document.getElementById('os-search')?.value || '').toLowerCase();
+
+      const rows = allOrderRequests.filter(r => {
+        const ms = !statusFilter || r.status === statusFilter;
+        const mt = !typeFilter || r.request_type === typeFilter;
+        const mq = !q || r.equipment_name.toLowerCase().includes(q) || (r.requester || '').toLowerCase().includes(q);
+        return ms && mt && mq;
+      });
+
+      document.getElementById('order-status-body').innerHTML = rows.length
+        ? rows.map(r => {
+          const stBadge = orderStatusBadge(r.status);
+          // 管理者のみステータス変更セレクト表示
+          let actionHtml = '—';
+          if (can.orderApprove()) {
+            actionHtml = `<select class="sel" style="height:26px;font-size:14px;" onchange="updateOrderStatus('${r.id}',this.value)">
+              ${ORDER_STATUSES.map(s => `<option value="${s.value}"${r.status === s.value ? ' selected' : ''}>${s.label}</option>`).join('')}
+            </select>`;
+          }
+          return `<tr>
+            <td><span class="badge ${r.request_type === '新規導入' ? 'status-new' : 'status-shortage'}">${r.request_type || '—'}</span></td>
+            <td><span class="badge b-idle" style="font-size:14px;">${r.category || '—'}</span></td>
+            <td style="font-weight:500;">${r.equipment_name}</td>
+            <td>${r.quantity}</td>
+            <td>${r.estimated_price ? '¥' + Number(r.estimated_price).toLocaleString() : '—'}</td>
+            <td>${r.requester}</td>
+            <td>${r.created_at?.slice(0, 10) || '—'}</td>
+            <td>${stBadge}</td>
+            <td style="font-size:14px;color:var(--text2);">${r.status_updated_at ? fmtDatetime(r.status_updated_at) : '—'}</td>
+            <td style="font-size:14px;">${r.approved_by || '—'}</td>
+            <td style="max-width:140px;font-size:18px;">${truncRemark(r.note)}</td>
+            <td style="white-space:nowrap;">${actionHtml}</td>
+          </tr>`;
+        }).join('')
+        : '<tr><td colspan="12" style="text-align:center;color:var(--text3);padding:16px;">該当なし</td></tr>';
+    }
+
+    // 到着済みモーダル用変数
+    let arrivedOrderData = null;
+
+    async function updateOrderStatus(requestId, newStatus) {
+      if (!can.orderApprove()) { showToast('管理者のみステータスを変更できます', false); return; }
+      const statusLabel = ORDER_STATUSES.find(s => s.value === newStatus)?.label || newStatus;
+      try {
+        await db.from('order_requests').update({
+          status: newStatus,
+          approved_by: currentUserName,
+          approved_at: new Date().toISOString(),
+          status_updated_at: new Date().toISOString()
+        }).eq('id', requestId);
+        showToast(`ステータスを「${statusLabel}」に変更しました`);
+
+        // 到着済みにした場合、入庫登録の確認モーダルを表示
+        if (newStatus === 'arrived') {
+          const req = allOrderRequests.find(r => r.id === requestId);
+          if (req) {
+            arrivedOrderData = { category: req.category, name: req.equipment_name, qty: req.quantity };
+            document.getElementById('arrived-modal-msg').innerHTML =
+              `<strong>${req.equipment_name}</strong>（${req.category}）が到着済みになりました。<br>
+               数量：${req.quantity}個<br><br>
+               入庫管理画面で入庫登録を行いますか？`;
+            document.getElementById('arrived-modal').classList.add('on');
+          }
+        }
+        loadOrderStatus();
+      } catch (e) { showToast(translateDbError(e.message), false); }
+    }
+
+    function closeArrivedModal() {
+      document.getElementById('arrived-modal').classList.remove('on');
+      arrivedOrderData = null;
+    }
+
+    function goToInboundFromArrived() {
+      closeArrivedModal();
+      navTo('inout');
+      // 少し待ってからフォームに値をセット
+      setTimeout(() => {
+        if (arrivedOrderData || document.getElementById('in-category')) {
+          // 直前に保存したデータがあれば使う
+          const d = arrivedOrderData || window._lastArrivedData;
+          if (d) {
+            const catSel = document.getElementById('in-category');
+            if (catSel) catSel.value = d.category || '';
+            const nameInp = document.getElementById('in-name');
+            if (nameInp) nameInp.value = d.name || '';
+            const qtyInp = document.getElementById('in-qty');
+            if (qtyInp) qtyInp.value = d.qty || 1;
+          }
+        }
+      }, 200);
+    }
+
+    // goToInboundFromArrived用にデータを保持
+    const _origCloseArrived = closeArrivedModal;
+    window.goToInboundFromArrived = function () {
+      window._lastArrivedData = arrivedOrderData;
+      document.getElementById('arrived-modal').classList.remove('on');
+      arrivedOrderData = null;
+      navTo('inout');
+      setTimeout(() => {
+        const d = window._lastArrivedData;
+        if (!d) return;
+        const catSel = document.getElementById('in-category');
+        if (catSel) catSel.value = d.category || '';
+        const nameInp = document.getElementById('in-name');
+        if (nameInp) nameInp.value = d.name || '';
+        const qtyInp = document.getElementById('in-qty');
+        if (qtyInp) qtyInp.value = d.qty || 1;
+        window._lastArrivedData = null;
+      }, 300);
+    };
+
+    // ============================================================
+    // 棚卸し
+    // ============================================================
+    async function loadInventory() {
+      if (!can.dispose()) {
+        document.getElementById('inv-body').innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--red-text);padding:16px;">棚卸しの権限がありません</td></tr>';
+        return;
+      }
+      const { data } = await db.from('equipment').select('*').order('code');
+      allEquipment = data || [];
+      const { data: checks } = await db.from('inventory_check').select('*').order('checked_at', { ascending: false });
+      const latestChecks = {};
+      (checks || []).forEach(c => { if (!latestChecks[c.equipment_id]) latestChecks[c.equipment_id] = c; });
+      invCounts = {}; invChecked = {};
+      Object.entries(latestChecks).forEach(([eqId, c]) => {
+        invChecked[eqId] = { checker: c.checked_by, checkedAt: c.checked_at, actualQty: c.actual_qty };
+      });
+      renderInventory();
+    }
+
+    function renderInventory() {
+      document.getElementById('inv-body').innerHTML = allEquipment.map(e => {
+        const real = invCounts[e.id] !== undefined ? invCounts[e.id] : e.quantity;
+        const diff = real - e.quantity;
+        const diffHtml = diff === 0 ? '<span style="color:var(--text3);">±0</span>'
+          : diff > 0 ? `<span style="color:var(--teal);font-weight:600;">+${diff}</span>`
+            : `<span style="color:var(--red);font-weight:600;">${diff}</span>`;
+        const checked = invChecked[e.id];
+        return `<tr>
+      <td style="font-family:monospace;font-size:14px;">${e.code || '—'}</td>
+      <td>${e.name}</td>
+      <td style="font-weight:600;">${e.quantity}</td>
+      <td><input type="number" class="inp" style="width:70px;height:26px;" value="${real}" min="0"
+          onchange="invCounts['${e.id}']=parseInt(this.value)||0;renderInventory()"></td>
+      <td>${diffHtml}</td>
+      <td>${checked ? '<span class="inv-checked">✓ 確認済</span>' : '<span style="font-size:14px;color:var(--text3);">未確認</span>'}</td>
+      <td>${checked ? `<span style="font-size:14px;">${checked.checker || '—'}</span>` : '—'}</td>
+      <td>${checked ? `<span style="font-size:14px;color:var(--text2);">${fmtDatetime(checked.checkedAt)}</span>` : '—'}</td>
+      <td style="white-space:nowrap;">
+        <button class="btn btn-sm btn-success" onclick="openInvModal('${e.id}')" style="margin-right:4px;">確認記録</button>
+        ${diff !== 0 ? `<button class="btn btn-sm btn-primary" onclick="fixInv('${e.id}')">差異修正</button>` : ''}
+      </td>
+    </tr>`;
+      }).join('');
+    }
+
+    function openInvModal(id) {
+      invModalEquipId = id;
+      const eq = allEquipment.find(e => e.id === id);
+      document.getElementById('inv-modal-info').innerHTML = `<strong>${eq.code || '—'}</strong> — ${eq.name}<br>システム在庫: <strong>${eq.quantity}個</strong>`;
+      document.getElementById('ivm-qty').value = invCounts[id] !== undefined ? invCounts[id] : eq.quantity;
+      document.getElementById('ivm-checker').value = currentUserName;
+      document.getElementById('ivm-datetime').textContent = fmtDatetime(new Date().toISOString());
+      document.getElementById('inv-modal').classList.add('on');
+    }
+    function closeInvModal() { document.getElementById('inv-modal').classList.remove('on'); }
+
+    async function confirmInventory() {
+      const id = invModalEquipId;
+      const eq = allEquipment.find(e => e.id === id);
+      const actualQty = parseInt(document.getElementById('ivm-qty').value) || 0;
+      const checker = document.getElementById('ivm-checker').value || currentUserName;
+      const now = new Date().toISOString();
+      try {
+        await db.from('inventory_check').insert({ equipment_id: id, system_qty: eq.quantity, actual_qty: actualQty, checked_by: checker, checked_at: now });
+        invCounts[id] = actualQty;
+        invChecked[id] = { checker, checkedAt: now, actualQty };
+        showToast(`「${eq.name}」の棚卸しを記録しました（確認者：${checker}）`);
+        closeInvModal(); renderInventory();
+      } catch (e) { showToast(translateDbError(e.message), false); }
+    }
+
+    async function fixInv(id) {
+      const eq = allEquipment.find(e => e.id === id);
+      const real = invCounts[id];
+      if (real === undefined) return;
+      const diff = real - eq.quantity;
+      try {
+        await db.from('equipment').update({ quantity: real }).eq('id', id);
+        await db.from('inout_log').insert({ equipment_id: id, type: diff > 0 ? '入庫' : '出庫', quantity: Math.abs(diff), note: '棚卸し修正', recorded_by: currentUserName, date: TODAY });
+        eq.quantity = real;
+        delete invCounts[id];
+        showToast(`「${eq.name}」の在庫を${real}個に修正しました`);
+        renderInventory();
+      } catch (e) { showToast(translateDbError(e.message), false); }
+    }
+
+    async function applyAllInventory() {
+      const ids = Object.keys(invCounts);
+      if (!ids.length) { showToast('修正項目がありません', false); return; }
+      for (const id of ids) await fixInv(id);
+      showToast(`棚卸し修正を完了しました（${ids.length}件）`);
+    }
+
+    // ============================================================
+    // 発注管理（新規導入・不足補充の申請フォーム）
+    // ============================================================
+    async function loadOrder() {
+      document.getElementById('nr-requester').textContent = currentUserName;
+
+      let orderRequests = [];
+      try {
+        const { data } = await db.from('order_requests').select('*').order('created_at', { ascending: false });
+        orderRequests = data || [];
+      } catch (e) { }
+
+      // 管理者：承認待ち通知
+      const pending = orderRequests.filter(r => r.status === 'pending');
+      if (can.orderApprove() && pending.length > 0) {
+        document.getElementById('order-notifs').innerHTML =
+          `<div class="notif-panel"><h4>📬 承認待ちの発注申請 ${pending.length}件</h4>
+       ${pending.map(r =>
+            `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:14px;flex-wrap:wrap;">
+           <span style="font-weight:500;">${r.equipment_name}</span>
+           <span class="badge b-idle">${r.category || '—'}</span>
+           <span style="color:var(--text2);">${r.quantity}個</span>
+           <span style="color:var(--text3);">申請者: ${r.requester}</span>
+           ${r.estimated_price ? `<span style="color:var(--text2);">¥${Number(r.estimated_price).toLocaleString()}</span>` : ''}
+           <button class="btn btn-sm btn-success" onclick="approveOrder('${r.id}')">承認</button>
+           <button class="btn btn-sm btn-danger" onclick="rejectOrder('${r.id}')">却下</button>
+         </div>`
+          ).join('')}
+       </div>`;
+      } else {
+        document.getElementById('order-notifs').innerHTML = '';
+      }
+
+      document.getElementById('order-alerts').innerHTML = '';
+
+      // 申請一覧テーブル
+      // ... (前略)
+      document.getElementById('order-body').innerHTML = orderRequests.length
+        ? orderRequests.map(r => {
+          const stBadge = orderStatusBadge(r.status);
+          return `<tr>
+      <td><span class="badge ${r.request_type === '新規導入' ? 'status-new' : 'status-shortage'}">${r.request_type || '—'}</span></td>
+      <td><span class="badge b-idle" style="font-size:14px;">${r.category || '—'}</span></td>
+      <td style="font-weight:500;">${r.equipment_name}</td>
+      <td>${r.quantity}</td>
+      <td>${r.estimated_price ? '¥' + Number(r.estimated_price).toLocaleString() : '—'}</td>
+      <td style="max-width:160px;font-size:18px;">${truncRemark(r.note)}</td>
+      <td>${r.requester}</td>
+      <td>${r.created_at?.slice(0, 10) || '—'}</td>
+      <td>${stBadge}</td>
+    </tr>`;
+        }).join('')
+        : '<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:16px;">申請なし</td></tr>';
+    }
+
+    async function submitNewOrderRequest() {
+      if (!can.order()) { showToast('発注申請の権限がありません', false); return; }
+      const reqType = document.getElementById('nr-type').value;
+      const category = document.getElementById('nr-category').value;
+      const name = document.getElementById('nr-name').value.trim();
+      const qty = parseInt(document.getElementById('nr-qty').value) || 1;
+      const price = document.getElementById('nr-price').value;
+      const due = document.getElementById('nr-due').value;
+      const note = document.getElementById('nr-note').value;
+      if (!category || !name) { showToast('設備種類とメーカー・機種名は必須です', false); return; }
+      try {
+        await db.from('order_requests').insert({
+          request_type: reqType, category, equipment_name: name,
+          quantity: qty, estimated_price: price ? parseInt(price) : null,
+          due_date: due || null, note, requester: currentUserName, status: 'pending'
+        });
+        showToast(`「${name}」の発注申請を送信しました。管理者に通知されます。`);
+        document.getElementById('nr-name').value = '';
+        document.getElementById('nr-qty').value = 1;
+        document.getElementById('nr-price').value = '';
+        document.getElementById('nr-note').value = '';
+        loadOrder();
+      } catch (e) { showToast(translateDbError(e.message), false); }
+    }
+
+    async function approveOrder(requestId) {
+      if (!can.orderApprove()) { showToast('管理者のみ承認できます', false); return; }
+      try {
+        await db.from('order_requests').update({ status: 'approved', approved_by: currentUserName, approved_at: new Date().toISOString() }).eq('id', requestId);
+        showToast('発注申請を承認しました'); loadOrder();
+      } catch (e) { showToast(translateDbError(e.message), false); }
+    }
+
+    async function rejectOrder(requestId) {
+      if (!can.orderApprove()) { showToast('管理者のみ却下できます', false); return; }
+      try {
+        await db.from('order_requests').update({ status: 'rejected', approved_by: currentUserName, approved_at: new Date().toISOString() }).eq('id', requestId);
+        showToast('発注申請を却下しました'); loadOrder();
+      } catch (e) { showToast(translateDbError(e.message), false); }
+    }
+
+    // ============================================================
+    // 廃棄管理
+    // ============================================================
+    function buildEquipOptions(selectId, eqs) {
+      document.getElementById(selectId).innerHTML =
+        '<option value="">-- 設備を選択 --</option>' +
+        eqs.map(e => `<option value="${e.id}" data-code="${e.code || ''}" data-qty="${e.quantity}">[${e.code || '—'}] ${e.name}（在庫:${e.quantity}）</option>`).join('');
+    }
+
+    function filterEquipSelect(prefix, selectId, query) {
+      const q = query.toLowerCase();
+      const filtered = q ? allEquipment.filter(e => (e.code || '').toLowerCase().includes(q) || e.name.toLowerCase().includes(q)) : allEquipment;
+      buildEquipOptions(selectId, filtered);
+      showDisposeStock();
+    }
+
+    function showDisposeStock() {
+      const sel = document.getElementById('disp-device');
+      const opt = sel.options[sel.selectedIndex];
+      const infoEl = document.getElementById('disp-stock-info');
+      if (opt && opt.value) {
+        const code = opt.dataset.code || '';
+        const qty = opt.dataset.qty || 0;
+        infoEl.innerHTML = `管理番号: <strong>${code}</strong> ／ 現在庫: <strong style="color:${qty < 1 ? 'var(--red)' : 'var(--teal)'};">${qty}個</strong>`;
+      } else { infoEl.innerHTML = ''; }
+    }
+
+    async function loadDispose() {
+      if (!can.dispose()) {
+        document.getElementById('dispose-history').innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--red-text);padding:16px;">廃棄管理の権限がありません</td></tr>';
+        return;
+      }
+      document.getElementById('disp-recorder').textContent = currentUserName;
+      const { data: eqs } = await db.from('equipment').select('id,name,status,quantity,code,category').neq('status', '廃棄').order('code');
+      allEquipment = eqs || [];
+      buildEquipOptions('disp-device', allEquipment);
+      // equipment join不要 — dispose_logに保存したequipment_code/categoryを使う
+      const { data: logs } = await db.from('dispose_log').select('*').order('dispose_date', { ascending: false });
+      document.getElementById('dispose-history').innerHTML = (logs || []).map(l =>
+        `<tr>
+         <td>${l.dispose_date}</td>
+         <td style="font-family:monospace;font-size:14px;">${l.equipment_code || '—'}</td>
+         <td style="font-weight:500;">${l.equipment_name}</td>
+         <td>${l.quantity || 1}</td>
+         <td><span class="badge b-out">${l.reason}</span></td>
+         <td>${l.disposed_by}</td>
+         <td>${truncRemark(l.note)}</td>
+        </tr>`
+      ).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:12px;">廃棄履歴なし</td></tr>';
+    }
+
+    async function doDispose() {
+      if (!can.dispose()) { showToast('廃棄管理の権限がありません', false); return; }
+      const id = document.getElementById('disp-device').value;
+      if (!id) { showToast('設備を選択してください', false); return; }
+      const eq = allEquipment.find(e => e.id === id);
+      const qty = parseInt(document.getElementById('disp-qty').value) || 1;
+      if (!eq || eq.quantity < qty) { showToast(`在庫が不足しています（現在庫: ${eq?.quantity || 0}個）`, false); return; }
+      const reason = document.getElementById('disp-reason').value;
+      const date = document.getElementById('disp-date').value || TODAY;
+      const note = document.getElementById('disp-note').value;
+      const newQty = eq.quantity - qty;
+      try {
+        // ① 廃棄ログを記録（削除前に管理番号・種類も保存する）
+        await db.from('dispose_log').insert({
+          equipment_id: id,
+          equipment_name: eq.name,
+          equipment_code: eq.code || null,   // 管理番号を保存
+          category: eq.category || null,      // 種類を保存
+          quantity: qty,
+          reason,
+          disposed_by: currentUserName,
+          dispose_date: date,
+          note
+        });
+        // ② 入出庫ログにも記録（メーカー・機種名・コードを note に含めて削除後も追跡可能に）
+        await db.from('inout_log').insert({
+          equipment_id: id,
+          type: '出庫',
+          quantity: qty,
+          note: `廃棄（${reason}）`,
+          recorded_by: currentUserName,
+          date,
+          // メーカー・機種名とコードをメモとして保持
+          target_user: `【廃棄】${eq.code || ''} ${eq.name}`
+        });
+
+        if (newQty <= 0) {
+          // ③ 全数廃棄 → 設備レコードを完全削除（FK CASCADE で inout_log/inventory_check も削除）
+          //    ただし dispose_log は SET NULL なので記録は残る
+          await db.from('equipment').delete().eq('id', id);
+          showToast(`「${eq.name}」を全数廃棄し、設備マスタから削除しました`);
+        } else {
+          // ④ 一部廃棄 → 在庫数だけ減らす
+          await db.from('equipment').update({ quantity: newQty }).eq('id', id);
+          showToast(`「${eq.name}」を${qty}個廃棄登録しました（残在庫: ${newQty}個）`);
+        }
+        // フォームリセット
+        document.getElementById('disp-code-search').value = '';
+        document.getElementById('disp-qty').value = 1;
+        document.getElementById('disp-note').value = '';
+        loadDispose();
+      } catch (e) { showToast(translateDbError(e.message), false); }
+    }
+
+    // ============================================================
+    // 従業員一覧
+    // ============================================================
+    async function loadEmployees() {
+      const { data, error } = await db.from('users').select('*').order('name');
+      if (error) { showErr('employee-body', error.message); return; }
+      allEmployees = data || [];
+      // 部門フィルターを更新
+      const depts = [...new Set(allEmployees.map(u => u.department).filter(Boolean))];
+      const deptSel = document.getElementById('emp-dept-filter');
+      const cur = deptSel.value;
+      deptSel.innerHTML = '<option value="">全部門</option>' + depts.map(d => `<option value="${d}"${d === cur ? ' selected' : ''}>${d}</option>`).join('');
+      renderEmployees();
+    }
+
+    function renderEmployees() {
+      const q = (document.getElementById('emp-search')?.value || '').toLowerCase();
+      const dept = document.getElementById('emp-dept-filter')?.value || '';
+      const roleColors = { admin: 'b-purple', editor: 'b-blue', operator: 'b-in', viewer: 'b-idle' };
+      const rows = allEmployees.filter(u => {
+        const mq = !q || u.name.toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q) || (u.department || '').toLowerCase().includes(q) || (u.office || '').toLowerCase().includes(q);
+        return mq && (!dept || u.department === dept);
+      });
+      document.getElementById('employee-body').innerHTML = rows.length
+        ? rows.map(u => `<tr>
+        <td style="font-weight:500;">${u.name}</td>
+        <td style="color:var(--text2);font-size:14px;">${u.email}</td>
+        <td>${u.department || '—'}</td>
+        <td>${u.office || '—'}</td>
+        <td><span class="badge ${roleColors[u.role] || 'b-idle'}">${ROLE_LABELS[u.role] || u.role}</span></td>
+      </tr>`).join('')
+        : '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:16px;">該当なし</td></tr>';
+    }
+
+    // ============================================================
+    // 権限管理（管理者のみ）
+    // ============================================================
+    async function loadUsers() {
+      if (!can.admin()) { showToast('管理者のみアクセスできます', false); navTo('dashboard'); return; }
+      const { data } = await db.from('users').select('*').order('name');
+      const roleColors = { admin: 'b-purple', editor: 'b-blue', operator: 'b-in', viewer: 'b-idle' };
+      document.getElementById('user-body').innerHTML = (data || []).map(u =>
+        `<tr>
+      <td style="font-weight:500;">${u.name}</td>
+      <td style="color:var(--text2);font-size:14px;">${u.email}</td>
+      <td>${u.department || '—'}</td>
+      <td>${u.office || '—'}</td>
+      <td><span class="badge ${roleColors[u.role] || 'b-idle'}">${ROLE_LABELS[u.role] || u.role}</span></td>
+      <td style="white-space:nowrap;">
+        <select class="sel" style="height:26px;font-size:14px;margin-right:4px;" onchange="updateRole('${u.id}',this.value)">
+          ${['viewer', 'operator', 'editor', 'admin'].map(r =>
+          `<option value="${r}"${u.role === r ? ' selected' : ''}>${ROLE_LABELS[r]}</option>`
+        ).join('')}
+        </select>
+        <button class="btn btn-sm" style="margin-right:4px;" onclick="openChangePassModal('${u.id}','${u.name}')">PW変更</button>
+        <button class="btn btn-sm btn-danger" onclick="openDeleteModal('${u.id}','${u.name}','${u.email}')">削除</button>
+      </td>
+    </tr>`
+      ).join('');
+    }
+
+    async function updateRole(id, role) {
+      if (!can.admin()) { showToast('権限がありません', false); return; }
+      const { error } = await db.from('users').update({ role }).eq('id', id);
+      if (error) { showToast(error.message, false); return; }
+      showToast('権限を更新しました');
+      // 従業員一覧も更新
+      loadUsers();
+    }
+
+    // ============================================================
+    // 管理者によるアカウント作成
+    // ============================================================
+    async function createNewUser() {
+      if (!can.admin()) { showToast('管理者のみアカウントを作成できます', false); return; }
+      const name = document.getElementById('nu-name').value.trim();
+      const email = document.getElementById('nu-email').value.trim();
+      const pass = document.getElementById('nu-pass').value;
+      const dept = document.getElementById('nu-dept').value.trim();
+      const office = document.getElementById('nu-office').value.trim();
+      const role = document.getElementById('nu-role').value;
+      if (!name || !email || !pass) { showErr('nu-err', '氏名・メール・パスワードは必須です'); return; }
+      if (pass.length < 8) { showErr('nu-err', 'パスワードは8文字以上にしてください'); return; }
+      try {
+        // Supabase Auth でユーザー作成
+        const { data: signUpData, error: signUpErr } = await db.auth.signUp({
+          email, password: pass, options: { data: { name } }
+        });
+        if (signUpErr) throw signUpErr;
+        // usersテーブルにプロフィール情報を登録
+        const uid = signUpData.user?.id;
+        if (uid) {
+          await db.from('users').upsert({
+            id: uid, name, email, role, department: dept || null, office: office || null
+          }, { onConflict: 'email' });
+        }
+        showToast(`「${name}」のアカウントを作成しました（権限：${ROLE_LABELS[role]}）`);
+        ['nu-name', 'nu-email', 'nu-pass', 'nu-dept', 'nu-office'].forEach(id => document.getElementById(id).value = '');
+        document.getElementById('nu-role').value = 'viewer';
+        document.getElementById('nu-err').innerHTML = '';
+        loadUsers();
+      } catch (e) {
+        showErr('nu-err', translateAuthError(e.message));
+      }
+    }
+
+    // ============================================================
+    // アカウント削除（二重確認）
+    // ============================================================
+    function openDeleteModal(userId, userName, userEmail) {
+      if (!can.admin()) { showToast('管理者のみ削除できます', false); return; }
+      deleteTargetUserId = userId;
+      document.getElementById('delete-user-msg').innerHTML =
+        `<strong>${userName}</strong>（${userEmail}）のアカウントを削除します。<br>
+     この操作は取り消せません。ユーザーのデータはシステムから削除されます。`;
+      document.getElementById('delete-confirm-input').value = '';
+      document.getElementById('delete-confirm-btn').disabled = true;
+      document.getElementById('delete-user-modal').classList.add('on');
+    }
+
+    function closeDeleteModal() {
+      document.getElementById('delete-user-modal').classList.remove('on');
+      deleteTargetUserId = null;
+    }
+
+    function checkDeleteInput() {
+      const val = document.getElementById('delete-confirm-input').value;
+      document.getElementById('delete-confirm-btn').disabled = (val !== '削除する');
+    }
+
+    async function executeDeleteUser() {
+      if (!can.admin() || !deleteTargetUserId) return;
+      try {
+        const { error } = await db.from('users').delete().eq('id', deleteTargetUserId);
+        if (error) throw error;
+        showToast('アカウントを削除しました');
+        closeDeleteModal();
+        loadUsers();
+      } catch (e) { showToast(translateDbError(e.message), false); }
+    }
+
+    // ============================================================
+    // パスワード変更（管理者によるユーザーPW変更）
+    // ============================================================
+    let changePassTargetId = null;
+
+    function openChangePassModal(userId, userName) {
+      if (!can.admin()) { showToast('管理者のみパスワードを変更できます', false); return; }
+      changePassTargetId = userId;
+      document.getElementById('change-pass-msg').textContent = `「${userName}」のパスワードを変更します。`;
+      document.getElementById('change-pass-new').value = '';
+      document.getElementById('change-pass-confirm').value = '';
+      document.getElementById('change-pass-err').innerHTML = '';
+      document.getElementById('change-pass-modal').classList.add('on');
+    }
+
+    function closeChangePassModal() {
+      document.getElementById('change-pass-modal').classList.remove('on');
+      changePassTargetId = null;
+    }
+
+    async function executeChangePassword() {
+      const newPass = document.getElementById('change-pass-new').value;
+      const confirmPass = document.getElementById('change-pass-confirm').value;
+      if (!newPass || newPass.length < 8) {
+        showErr('change-pass-err', 'パスワードは8文字以上にしてください'); return;
+      }
+      if (newPass !== confirmPass) {
+        showErr('change-pass-err', 'パスワードが一致しません'); return;
+      }
+      try {
+        // Supabase Admin API でパスワード更新
+        const { error } = await db.auth.admin.updateUserById(changePassTargetId, { password: newPass });
+        if (error) throw error;
+        showToast('パスワードを変更しました');
+        closeChangePassModal();
+      } catch (e) {
+        showErr('change-pass-err', translateAuthError(e.message));
+      }
+    }
+
+    // ============================================================
+    // アカウント設定（個人パスワード変更）
+    // ============================================================
+// アカウント設定画面の読み込み (修正後)
+function loadMyAccount() {
+  // アカウント名とメールアドレスを表示
+  document.getElementById('my-info-name').textContent = currentUserName;
+  document.getElementById('my-info-email').textContent = currentUser ? currentUser.email : '—';
+
+  // 画面を開くたびに入力をリセット (既存の処理)
+  ['my-pass-current', 'my-pass-new', 'my-pass-confirm'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('my-pass-err').innerHTML = '';
+}
+
+    async function doChangeMyPassword() {
+      const currentPass = document.getElementById('my-pass-current').value;
+      const newPass     = document.getElementById('my-pass-new').value;
+      const confirmPass = document.getElementById('my-pass-confirm').value;
+
+      if (!currentPass) { showErr('my-pass-err', '現在のパスワードを入力してください'); return; }
+      if (!newPass || newPass.length < 8) { showErr('my-pass-err', '新しいパスワードは8文字以上にしてください'); return; }
+      if (newPass !== confirmPass) { showErr('my-pass-err', '新しいパスワードが一致しません'); return; }
+
+      try {
+        // 現在のパスワードで再認証
+        const { error: reAuthErr } = await db.auth.signInWithPassword({
+          email: currentUser.email,
+          password: currentPass
+        });
+        if (reAuthErr) { showErr('my-pass-err', '現在のパスワードが正しくありません'); return; }
+
+        // パスワード更新
+        const { error: updateErr } = await db.auth.updateUser({ password: newPass });
+        if (updateErr) throw updateErr;
+
+        showToast('パスワードを変更しました');
+        ['my-pass-current', 'my-pass-new', 'my-pass-confirm'].forEach(id => {
+          document.getElementById(id).value = '';
+        });
+        document.getElementById('my-pass-err').innerHTML = '';
+      } catch (e) {
+        showErr('my-pass-err', translateAuthError(e.message));
+      }
+    }
+
+    // ============================================================
+    // 認証（Supabase Auth）
+    // ============================================================
+    function showLoginScreen() {
+      document.getElementById('login-screen').classList.add('on');
+      document.getElementById('main-app').style.display = 'none';
+    }
+
+    function showApp(user) {
+      currentUser = user;
+      document.getElementById('login-screen').classList.remove('on');
+      document.getElementById('main-app').style.display = 'flex';
+    }
+
+    function setLoginLoading(btnId, loading, label) {
+      const btn = document.getElementById(btnId);
+      btn.disabled = loading;
+      btn.innerHTML = loading ? `<span class="spinner"></span>処理中...` : label;
+    }
+
+    function showLoginErr(msg) {
+      const el = document.getElementById('login-err');
+      el.textContent = msg;
+      el.style.background = '';
+      el.style.color = '';
+      el.classList.add('on');
+    }
+
+    async function doLogin() {
+      const email = document.getElementById('login-email').value.trim();
+      const pass = document.getElementById('login-pass').value;
+      if (!email || !pass) { showLoginErr('メールアドレスとパスワードを入力してください'); return; }
+      setLoginLoading('login-btn', true, 'ログインする');
+      document.getElementById('login-err').classList.remove('on');
+      const { data, error } = await db.auth.signInWithPassword({ email, password: pass });
+      setLoginLoading('login-btn', false, 'ログインする');
+      if (error) { showLoginErr(translateAuthError(error.message)); return; }
+      await initUserSession(data.user);
+    }
+
+    async function doResetPassword() {
+      const email = document.getElementById('login-email').value.trim();
+      if (!email) { showLoginErr('メールアドレスを入力してからクリックしてください'); return; }
+      const { error } = await db.auth.resetPasswordForEmail(email);
+      if (error) { showLoginErr(translateAuthError(error.message)); return; }
+      const el = document.getElementById('login-err');
+      el.style.background = 'var(--teal-bg)';
+      el.style.color = 'var(--teal-text)';
+      el.textContent = 'パスワードリセットのメールを送信しました。';
+      el.classList.add('on');
+    }
+
+    async function doLogout() {
+      await db.auth.signOut();
+      currentUser = null; currentUserRole = 'viewer'; currentUserName = '—';
+      showLoginScreen();
+    }
+
+    async function initUserSession(user) {
+      currentUserName = user.user_metadata?.name || user.email;
+      currentUserRole = 'viewer';
+      document.getElementById('login-user').textContent = currentUserName;
+      document.getElementById('login-role').textContent = ROLE_LABELS[currentUserRole];
+      applyRoleUI();
+
+      // usersテーブルからロール・プロフィール取得
+      db.from('users').select('name,role,phone,department,office').eq('email', user.email).single().then(({ data: uData }) => {
+        if (uData) {
+          currentUserName = uData.name || currentUserName;
+          currentUserRole = uData.role || 'viewer';
+          document.getElementById('login-user').textContent = currentUserName;
+          document.getElementById('login-role').textContent = ROLE_LABELS[currentUserRole] || currentUserRole;
+          applyRoleUI();
+        }
+      }).catch(() => { });
+
+      showApp(user);
+      loadDashboard();
+    }
+
+    function translateAuthError(msg) {
+      if (msg.includes('Invalid login credentials')) return 'メールアドレスまたはパスワードが違います';
+      if (msg.includes('Email not confirmed')) return 'メールアドレスの確認が完了していません';
+      if (msg.includes('User already registered')) return 'このメールアドレスは既に登録されています';
+      if (msg.includes('Password should be')) return 'パスワードは8文字以上にしてください';
+      if (msg.includes('Unable to validate email')) return 'メールアドレスの形式が正しくありません';
+      if (msg.includes('Signup is disabled')) return 'アカウント登録が無効になっています';
+      if (msg.includes('Email rate limit exceeded')) return 'メール送信の上限に達しました。しばらくしてから再試行してください';
+      return msg;
+    }
+
+    function translateDbError(msg) {
+      if (!msg) return '不明なエラーが発生しました';
+      if (msg.includes('duplicate key') || msg.includes('unique')) return 'すでに同じデータが登録されています（管理番号またはメールが重複しています）';
+      if (msg.includes('violates foreign key')) return '関連するデータが存在するため、この操作はできません';
+      if (msg.includes('violates not-null')) return '必須項目が入力されていません';
+      if (msg.includes('permission denied')) return 'この操作の権限がありません';
+      if (msg.includes('JWT expired') || msg.includes('not authenticated')) return 'セッションが切れました。再ログインしてください';
+      if (msg.includes('network') || msg.includes('fetch')) return 'ネットワークエラーが発生しました。接続を確認してください';
+      if (msg.includes('relation') && msg.includes('does not exist')) return 'データベースのテーブルが見つかりません。管理者にお問い合わせください';
+      if (msg.includes('column') && msg.includes('does not exist')) return 'データベースの列が見つかりません。スキーマの更新が必要です';
+      if (msg.includes('value too long')) return '入力値が長すぎます';
+      if (msg.includes('invalid input syntax')) return '入力形式が正しくありません';
+      if (msg.includes('check constraint')) return '入力値が許可された範囲外です';
+      return `エラー: ${msg}`;
+    }
+
+    db.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        await initUserSession(session.user);
+      } else if (event === 'SIGNED_OUT') {
+        showLoginScreen();
+      }
+    });
+
+    db.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) { initUserSession(session.user); }
+      else { showLoginScreen(); }
+    });
+
+    async function registerAdminDirectly() {
+      // 現在ログインまたは登録されているユーザー情報を取得
+      const { data: { users }, error: authError } = await db.auth.admin.listUsers();
+
+      // もし admin 権限がない場合は、ログイン中の自分自身のIDを使用
+      const { data: { user } } = await db.auth.getUser();
+
+      /* if (user && user.email === 'aiminmeng1@icloud.com') {
+        const { error } = await db.from('users').upsert({
+          id: user.id,
+          name: '孟 愛民',
+          email: 'aiminmeng1@icloud.com',
+          role: 'admin',
+          office: '日比谷本社',
+          department: '営業部'
+        });
+
+        if (error) console.error("登録失敗:", error.message);
+        else console.log("管理者登録が完了しました！再読み込みしてください。");
+      } else {
+        console.log("対象のユーザーでログインしていないか、ユーザーが見つかりません。");
+      } */
+    }
+    registerAdminDirectly();
+  </script>
+</body>
+
+</html>
