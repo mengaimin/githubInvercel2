@@ -1600,6 +1600,7 @@
               ※ Chromeシークレットモード（Ctrl+Shift+N）で開くと翻訳エラーを回避できます。
             </div>
             <button class="btn btn-sm btn-primary" onclick="showMigrationSQL()">📋 SQLをコピー</button>
+            <button class="btn btn-sm btn-warning" style="margin-left:6px;" onclick="showBoardSetupSQL()">📋 掲示板テーブル作成SQLをコピー</button>
           </div>
         </div>
       </div>
@@ -2295,36 +2296,34 @@ var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZ
       if (typeof checkNewPostsAndNotify === 'function') checkNewPostsAndNotify();
       showLoggedInUser();
 
-      // ── Realtime: board_posts の INSERT を購読して全員にリアルタイム通知 ──
-      if (supabaseClient && typeof supabaseClient.channel === 'function') {
-        var _boardChannel = supabaseClient
-          .channel('board-realtime-' + Math.random().toString(36).slice(2))
-          .on('postgres_changes',
-            { event: 'INSERT', schema: 'public', table: 'board_posts' },
-            async function(payload) {
-              var newPost = payload.new;
-              if (!newPost) return;
-              // 自分が今投稿したもの（readIdsに既にある）はスキップ
-              var readIds = LS.arr('board_read_ids');
-              if (readIds.indexOf(newPost.id) !== -1) return;
-              // データ更新 & UI反映
-              BOARD = await dbLoadBoard();
-              if (typeof renderBoard === 'function') renderBoard();
-              if (typeof updateBoardBadge === 'function') updateBoardBadge();
-              // テロップ通知
-              var t = (newPost.title || '');
-              var shortTitle = t.length > 10 ? t.substring(0, 10) + '...' : t;
-              var bodyText = (newPost.body || '').split('\n__GRANT__')[0];
-              if (typeof window.startNotification === 'function') {
-                window.startNotification('【' + shortTitle + '】 ' + bodyText);
-              }
+      // ── ポーリング: 新規投稿を全員に通知 ──
+      (function startBoardSync() {
+        var _lastTopId = BOARD.length > 0 ? BOARD[0].id : null;
+
+        setInterval(async function() {
+          try {
+            var fresh = await dbLoadBoard();
+            if (!fresh || fresh.length === 0) return;
+            var topId = fresh[0].id;
+            if (topId === _lastTopId) return;
+            // 自分が投稿したもの（readIdsに既にある）はスキップ
+            var readIds = LS.arr('board_read_ids');
+            if (readIds.indexOf(topId) !== -1) { _lastTopId = topId; return; }
+            _lastTopId = topId;
+            BOARD = fresh;
+            if (typeof renderBoard === 'function') renderBoard();
+            if (typeof updateBoardBadge === 'function') updateBoardBadge();
+            var latest = BOARD[0];
+            var t = (latest.title || '');
+            var shortTitle = t.length > 10 ? t.substring(0, 10) + '...' : t;
+            var bodyText = (latest.body || '').split('\n__GRANT__')[0];
+            if (typeof window.startNotification === 'function') {
+              window.startNotification('【' + shortTitle + '】 ' + bodyText);
             }
-          )
-          .subscribe(function(status) {
-            console.log('[Board Realtime] status:', status);
-          });
-      }
-      // ── Realtime ここまで ──
+          } catch(e) { /* silent */ }
+        }, 5000);
+      })();
+      // ── ポーリング ここまで ──
 
       var savedScreen = null;
       try { savedScreen = sessionStorage.getItem('gn2_current_screen'); } catch(e) {}
@@ -3415,6 +3414,39 @@ function openDocModal(editId = '', defaultGrantId = '') {
   };
 
   // ── DB初期設定SQLを表示＆コピー ──
+  window.showBoardSetupSQL = function() {
+    var sql = [
+      '-- board_posts テーブル作成（なければ）',
+      'CREATE TABLE IF NOT EXISTS board_posts (',
+      '  id         BIGSERIAL PRIMARY KEY,',
+      '  user_id    UUID REFERENCES auth.users(id) ON DELETE CASCADE,',
+      '  author_name TEXT NOT NULL DEFAULT \'\',',
+      '  title      TEXT NOT NULL DEFAULT \'\',',
+      '  content    TEXT NOT NULL DEFAULT \'\',',
+      '  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()',
+      ');',
+      '',
+      '-- RLS有効化',
+      'ALTER TABLE board_posts ENABLE ROW LEVEL SECURITY;',
+      '',
+      '-- 全認証ユーザーが閲覧・投稿・削除できるポリシー',
+      'DROP POLICY IF EXISTS "Allow select board" ON board_posts;',
+      'DROP POLICY IF EXISTS "Allow insert board" ON board_posts;',
+      'DROP POLICY IF EXISTS "Allow delete board" ON board_posts;',
+      'CREATE POLICY "Allow select board" ON board_posts FOR SELECT TO authenticated USING (true);',
+      'CREATE POLICY "Allow insert board" ON board_posts FOR INSERT TO authenticated WITH CHECK (true);',
+      'CREATE POLICY "Allow delete board" ON board_posts FOR DELETE TO authenticated USING (true);',
+      '',
+      '-- Realtimeを有効化',
+      'ALTER PUBLICATION supabase_realtime ADD TABLE board_posts;'
+    ].join('\n');
+
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(sql).then(function() { showToast('掲示板テーブル作成SQLをコピーしました！'); });
+    }
+    alert('以下のSQLをSupabase SQL Editorに貼り付けて実行してください：\n\n' + sql);
+  };
+
   window.showMigrationSQL = function() {
     var sql = '-- 資料テーブルにuser_idカラムを追加（個人管理用）\n' +
       'ALTER TABLE documents ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id);\n\n' +
