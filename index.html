@@ -1479,13 +1479,6 @@
           <div class="form-group">
             <div class="form-label">内容<span class="req">*</span></div><textarea class="ftxt" id="board-body" placeholder="全員に共有したい内容を入力してください…" style="min-height:100px;"></textarea>
           </div>
-          <!-- 助成金情報を添付 -->
-          <div style="margin-top:10px;">
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--blue);font-weight:600;">
-              <input type="checkbox" id="board-attach-grant" onchange="toggleBoardGrant(this.checked)" style="width:16px;height:16px;accent-color:var(--blue);">
-              💰 助成金情報を添付して共有する
-            </label>
-          </div>
           <div id="board-grant-fields" style="display:none;margin-top:12px;padding:14px;background:var(--blue-bg);border-radius:var(--r);border:1px solid var(--blue2);">
             <div style="font-size:12px;font-weight:700;color:var(--blue);margin-bottom:10px;">添付する助成金情報（他メンバーが取り込み可能）</div>
             <div class="g2" style="gap:10px;">
@@ -1973,7 +1966,9 @@ var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZ
   function initSupabase() {
     try {
       if (typeof supabase !== 'undefined') {
-        supabaseClient = supabase.createClient(SB_URL, SB_KEY);
+        supabaseClient = supabase.createClient(SB_URL, SB_KEY, {
+          realtime: { params: { eventsPerSecond: 10 } }
+        });
         console.log("Supabase初期化完了");
       } else {
         console.error("Supabaseライブラリが読み込まれていません");
@@ -2299,6 +2294,37 @@ var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZ
       if (typeof updateBoardBadge === 'function') updateBoardBadge();
       if (typeof checkNewPostsAndNotify === 'function') checkNewPostsAndNotify();
       showLoggedInUser();
+
+      // ── Realtime: board_posts の INSERT を購読して全員にリアルタイム通知 ──
+      if (supabaseClient && typeof supabaseClient.channel === 'function') {
+        var _boardChannel = supabaseClient
+          .channel('board-realtime-' + Math.random().toString(36).slice(2))
+          .on('postgres_changes',
+            { event: 'INSERT', schema: 'public', table: 'board_posts' },
+            async function(payload) {
+              var newPost = payload.new;
+              if (!newPost) return;
+              // 自分が今投稿したもの（readIdsに既にある）はスキップ
+              var readIds = LS.arr('board_read_ids');
+              if (readIds.indexOf(newPost.id) !== -1) return;
+              // データ更新 & UI反映
+              BOARD = await dbLoadBoard();
+              if (typeof renderBoard === 'function') renderBoard();
+              if (typeof updateBoardBadge === 'function') updateBoardBadge();
+              // テロップ通知
+              var t = (newPost.title || '');
+              var shortTitle = t.length > 10 ? t.substring(0, 10) + '...' : t;
+              var bodyText = (newPost.body || '').split('\n__GRANT__')[0];
+              if (typeof window.startNotification === 'function') {
+                window.startNotification('【' + shortTitle + '】 ' + bodyText);
+              }
+            }
+          )
+          .subscribe(function(status) {
+            console.log('[Board Realtime] status:', status);
+          });
+      }
+      // ── Realtime ここまで ──
 
       var savedScreen = null;
       try { savedScreen = sessionStorage.getItem('gn2_current_screen'); } catch(e) {}
