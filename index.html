@@ -2875,27 +2875,77 @@ function loadPastMemo() {
     // ════════════════════════════════════════
     const CAT_CLR = { '雇用・採用': 'b-blue', 'IT・設備投資': 'b-teal', '研修・人材育成': 'b-purple', '働き方改革': 'b-amber', 'その他': 'b-gray' };
     function filterGrants() { renderGrants(); }
+    function getGrantParent(name) {
+      var m = name.match(/^(.+?助成金)/);
+      return m ? m[1] : name;
+    }
+
     function renderGrants(cat) {
-  const q = document.getElementById('grant-search')?.value.toLowerCase() || '';
-  let list = GRANTS;
-  if (q) list = list.filter(g => g.name.toLowerCase().includes(q) || (g.keywords || []).some(k => k.toLowerCase().includes(q)));
-  
-  document.getElementById('grant-list').innerHTML = list.map(g => `
-    <div class="card mb12" style="cursor:pointer;transition:border-color .15s;" onmouseenter="this.style.borderColor='var(--blue2)'" onmouseleave="this.style.borderColor=''" onclick="showGrantDetail('${g.id}')">
-      <div style="display:flex;align-items:flex-start;gap:12px;">
-        <div style="flex:1;">
-          <div class="mb8">${g.featured ? `<span class="badge b-amber">★ よく使う</span>` : ''}</div>
-          <div style="font-size:16px;font-weight:900;margin-bottom:5px;">${g.name}</div>
-          <div style="font-size:13px;color:var(--t2);line-height:1.6;">${g.summary}</div>
-          ${(g.keywords || []).length ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px;">${(g.keywords || []).map(k => `<span class="badge b-blue" style="font-size:10px;">${k}</span>`).join('')}</div>` : ''}
-        </div>
-        <div style="text-align:right;flex-shrink:0;">
-          <div style="font-size:14px;font-weight:800;color:var(--amber);">${g.amount}</div>
-          <div style="font-size:11px;color:var(--t3);">${g.fee || ''}</div>
-        </div>
-      </div>
-    </div>`).join('') || '<div style="color:var(--t3);">該当なし</div>';
-}
+      var q = '';
+      var searchEl = document.getElementById('grant-search');
+      if (searchEl) q = searchEl.value.toLowerCase();
+      var list = GRANTS.slice();
+      if (q) list = list.filter(function(g) {
+        return g.name.toLowerCase().indexOf(q) !== -1 ||
+               (g.keywords || []).some(function(k) { return k.toLowerCase().indexOf(q) !== -1; });
+      });
+      if (!list.length) {
+        document.getElementById('grant-list').innerHTML = '<div style="color:var(--t3);">該当なし</div>';
+        return;
+      }
+      var groupOrder = [];
+      var groups = {};
+      list.forEach(function(g) {
+        var p = getGrantParent(g.name);
+        if (!groups[p]) { groups[p] = []; groupOrder.push(p); }
+        groups[p].push(g);
+      });
+      var html = '';
+      groupOrder.forEach(function(parent) {
+        var items = groups[parent];
+        html += '<div style="margin-bottom:24px;">';
+        html += '<div style="font-size:13px;font-weight:800;color:var(--t3);border-bottom:2px solid var(--amber);padding-bottom:5px;margin-bottom:10px;">' + parent + '</div>';
+        html += '<div style="display:flex;flex-direction:column;gap:8px;">';
+        items.forEach(function(g) {
+          var dn = g.name.replace(parent, '').replace(/^[（(]/, '').replace(/[）)]$/, '').trim();
+          if (!dn) dn = g.name;
+          var badge = g.featured ? '<span class="badge b-amber" style="margin-bottom:4px;display:inline-block;">★ よく使う</span><br>' : '';
+          var kws = '';
+          if ((g.keywords || []).length) {
+            kws += '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px;">';
+            (g.keywords || []).forEach(function(k) { kws += '<span class="badge b-blue" style="font-size:10px;">' + k + '</span>'; });
+            kws += '</div>';
+          }
+          html += '<div class="card grant-card" style="cursor:pointer;margin-bottom:0;" data-gid="' + g.id + '">' ;
+          html += '<div style="display:flex;align-items:flex-start;gap:12px;">';
+          html += '<div style="flex:1;">' + badge;
+          html += '<div style="font-size:14px;font-weight:900;margin-bottom:4px;">' + dn + '</div>';
+          html += '<div style="font-size:13px;color:var(--t2);line-height:1.6;">' + g.summary + '</div>';
+          html += kws + '</div>';
+          html += '<div style="text-align:right;flex-shrink:0;">';
+          html += '<div style="font-size:14px;font-weight:800;color:var(--amber);">' + g.amount + '</div>';
+          html += '<div style="font-size:11px;color:var(--t3);">' + (g.fee || '') + '</div>';
+          html += '</div></div></div>';
+        });
+        html += '</div></div>';
+      });
+      document.getElementById('grant-list').innerHTML = html;
+      // クリックイベントをdelegationで登録
+      document.getElementById('grant-list').onclick = function(e) {
+        var card = e.target.closest('.grant-card');
+        if (card && card.dataset.gid) showGrantDetail(card.dataset.gid);
+      };
+      document.getElementById('grant-list').onmouseover = function(e) {
+        var card = e.target.closest('.grant-card');
+        if (card) card.style.borderColor = 'var(--blue2)';
+      };
+      document.getElementById('grant-list').onmouseout = function(e) {
+        var card = e.target.closest('.grant-card');
+        if (card) card.style.borderColor = '';
+      };
+    }
+
+
 function showGrantDetail(gid) {
       const g = GRANTS.find(x => x.id === gid); if (!g) return;
       const relDocs = DOCS.filter(d => d.grantId && d.grantId === gid);
