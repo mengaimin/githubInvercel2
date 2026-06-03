@@ -2307,10 +2307,12 @@ var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZ
             var fresh = await dbLoadBoard();
             if (!fresh || fresh.length === 0) return;
             var topId = fresh[0].id;
-            console.log('[BoardSync] チェック topId=' + topId + ' lastId=' + window._boardLastTopId);
             if (topId === window._boardLastTopId) return;
-            var readIds = LS.arr('board_read_ids');
-            if (readIds.indexOf(topId) !== -1) { window._boardLastTopId = topId; return; }
+            // 自分が今投稿した直後かどうか: postBoard完了から3秒以内はスキップ
+            if (window._boardJustPosted && (Date.now() - window._boardJustPosted) < 3000) {
+              window._boardLastTopId = topId;
+              return;
+            }
             window._boardLastTopId = topId;
             BOARD = fresh;
             if (typeof renderBoard === 'function') renderBoard();
@@ -2319,11 +2321,10 @@ var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZ
             var t = (latest.title || '');
             var shortTitle = t.length > 10 ? t.substring(0, 10) + '...' : t;
             var bodyText = (latest.body || '').split('\n__GRANT__')[0];
-            console.log('[BoardSync] 新投稿検知! 通知:', shortTitle);
             if (typeof window.startNotification === 'function') {
               window.startNotification('【' + shortTitle + '】 ' + bodyText);
             }
-          } catch(e) { console.error('[BoardSync] エラー:', e); }
+          } catch(e) { /* silent */ }
         }, 5000);
       }
       // ── ポーリング ここまで ──
@@ -3195,6 +3196,7 @@ function openDocModal(editId = '', defaultGrantId = '') {
       var readIds = LS.arr('board_read_ids');
       readIds.push(posted.id);
       LS.set('board_read_ids', readIds);
+      window._boardJustPosted = Date.now(); // 自分の投稿をポーリングでスキップするためのタイムスタンプ
 
       var shortTitle = title.length > 10 ? title.substring(0, 10) + '...' : title;
       if (typeof window.startNotification === 'function') window.startNotification('【' + shortTitle + '】 ' + body.split('\n__GRANT__')[0]);
