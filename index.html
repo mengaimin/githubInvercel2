@@ -2297,19 +2297,21 @@ var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZ
       showLoggedInUser();
 
       // ── ポーリング: 新規投稿を全員に通知 ──
-      (function startBoardSync() {
-        var _lastTopId = BOARD.length > 0 ? BOARD[0].id : null;
+      if (!window._boardSyncStarted) {
+        window._boardSyncStarted = true;
+        window._boardLastTopId = BOARD.length > 0 ? BOARD[0].id : null;
+        console.log('[BoardSync] 起動 lastId=' + window._boardLastTopId);
 
         setInterval(async function() {
           try {
             var fresh = await dbLoadBoard();
             if (!fresh || fresh.length === 0) return;
             var topId = fresh[0].id;
-            if (topId === _lastTopId) return;
-            // 自分が投稿したもの（readIdsに既にある）はスキップ
+            console.log('[BoardSync] チェック topId=' + topId + ' lastId=' + window._boardLastTopId);
+            if (topId === window._boardLastTopId) return;
             var readIds = LS.arr('board_read_ids');
-            if (readIds.indexOf(topId) !== -1) { _lastTopId = topId; return; }
-            _lastTopId = topId;
+            if (readIds.indexOf(topId) !== -1) { window._boardLastTopId = topId; return; }
+            window._boardLastTopId = topId;
             BOARD = fresh;
             if (typeof renderBoard === 'function') renderBoard();
             if (typeof updateBoardBadge === 'function') updateBoardBadge();
@@ -2317,12 +2319,13 @@ var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZ
             var t = (latest.title || '');
             var shortTitle = t.length > 10 ? t.substring(0, 10) + '...' : t;
             var bodyText = (latest.body || '').split('\n__GRANT__')[0];
+            console.log('[BoardSync] 新投稿検知! 通知:', shortTitle);
             if (typeof window.startNotification === 'function') {
               window.startNotification('【' + shortTitle + '】 ' + bodyText);
             }
-          } catch(e) { /* silent */ }
+          } catch(e) { console.error('[BoardSync] エラー:', e); }
         }, 5000);
-      })();
+      }
       // ── ポーリング ここまで ──
 
       var savedScreen = null;
