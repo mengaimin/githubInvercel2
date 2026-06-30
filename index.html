@@ -915,6 +915,114 @@
       align-items: flex-start;
     }
 
+    /* ─── 厚労省紹介資料 ─── */
+    .mhlw-notice {
+      padding: 12px 14px;
+      border-radius: var(--r);
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 14px;
+    }
+
+    .mhlw-notice-none {
+      background: var(--bg3);
+      color: var(--t3);
+      border: 1px solid var(--border);
+    }
+
+    .mhlw-notice-alert {
+      background: var(--amber-bg);
+      color: #9a3412;
+      border: 1px solid rgba(212, 137, 10, 0.35);
+    }
+
+    .mhlw-summary {
+      background: #fffbeb;
+      border: 1px solid #fcd34d;
+      border-radius: var(--rl);
+      padding: 14px 16px;
+      margin-bottom: 14px;
+    }
+
+    .mhlw-summary-title {
+      font-size: 13px;
+      font-weight: 800;
+      color: #92400e;
+      margin-bottom: 10px;
+    }
+
+    .mhlw-summary-item {
+      background: var(--bg2);
+      border: 1px solid #fde68a;
+      border-radius: var(--r);
+      padding: 10px 12px;
+      margin-bottom: 8px;
+    }
+
+    .mhlw-summary-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .mhlw-file {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      padding: 12px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--r);
+      margin-bottom: 8px;
+      background: var(--bg2);
+    }
+
+    .mhlw-file.updated {
+      border-color: rgba(212, 137, 10, 0.45);
+      background: var(--amber-bg);
+    }
+
+    .mhlw-file.new {
+      border-color: rgba(24, 169, 106, 0.45);
+      background: var(--green-bg);
+    }
+
+    .mhlw-file-label {
+      font-size: 13px;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .mhlw-file-title {
+      font-size: 12px;
+      color: var(--t2);
+      line-height: 1.5;
+    }
+
+    .mhlw-change {
+      margin-top: 6px;
+      font-size: 11px;
+      color: #9a3412;
+      line-height: 1.5;
+    }
+
+    .mhlw-badge {
+      display: inline-block;
+      margin-left: 6px;
+      padding: 1px 7px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 800;
+      vertical-align: middle;
+    }
+
+    .mhlw-badge-new {
+      background: var(--green-bg);
+      color: var(--green);
+    }
+
+    .mhlw-badge-updated {
+      background: var(--amber-bg);
+      color: var(--amber);
+    }
+
     /* ─── Board ─── */
     .board-post {
       background: var(--bg2);
@@ -1181,6 +1289,161 @@
       /* デフォルト */
       transition: padding-top 0.3s;
     }
+
+    /* ─── 業務改善助成金計算 ─── */
+    .gyomu-calc-modal {
+      width: 620px;
+    }
+
+    .modal-head-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .modal-head-row .modal-title {
+      margin-bottom: 0;
+    }
+
+    .modal-x {
+      border: none;
+      background: transparent;
+      color: var(--t3);
+      font-size: 20px;
+      line-height: 1;
+      cursor: pointer;
+      padding: 2px 4px;
+      flex-shrink: 0;
+    }
+
+    .modal-x:hover {
+      color: var(--t1);
+    }
+
+    .gyomu-calc-desc {
+      font-size: 12px;
+      color: var(--t3);
+      line-height: 1.65;
+      margin-bottom: 16px;
+    }
+
+    .form-hint {
+      font-size: 11px;
+      color: var(--t3);
+      margin-top: 4px;
+    }
+
+    .gyomu-calc-result {
+      background: var(--blue-bg);
+      border: 1.5px solid rgba(58, 123, 213, 0.18);
+      border-radius: var(--rl);
+      padding: 18px;
+      margin-top: 6px;
+    }
+
+    .gyomu-calc-result-title {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--t1);
+      margin-bottom: 14px;
+    }
+
+    .gyomu-calc-kpi-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .gyomu-calc-kpi-lbl {
+      font-size: 11px;
+      color: var(--t3);
+      margin-bottom: 4px;
+      font-weight: 600;
+    }
+
+    .gyomu-calc-kpi-val {
+      font-size: 22px;
+      font-weight: 900;
+      line-height: 1.2;
+    }
+
+    .gyomu-calc-kpi-val.blue {
+      color: var(--blue);
+    }
+
+    .gyomu-calc-kpi-val.green {
+      color: var(--green);
+    }
+
+    .gyomu-calc-kpi-val.dark {
+      color: var(--t1);
+      font-size: 18px;
+    }
+
+    .gyomu-calc-divider {
+      border: none;
+      border-top: 1.5px dashed rgba(58, 123, 213, 0.25);
+      margin: 16px 0;
+    }
+
+    .gyomu-calc-trial-lbl {
+      font-size: 11px;
+      color: var(--t3);
+      margin-bottom: 4px;
+      font-weight: 600;
+    }
+
+    .gyomu-calc-note {
+      font-size: 11px;
+      color: var(--t3);
+      line-height: 1.65;
+      margin-top: 14px;
+    }
+
+    .gyomu-calc-limits {
+      margin-top: 14px;
+      font-size: 12px;
+    }
+
+    .gyomu-calc-limits summary {
+      cursor: pointer;
+      color: var(--blue);
+      font-weight: 700;
+      user-select: none;
+    }
+
+    .gyomu-calc-limits table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 11px;
+    }
+
+    .gyomu-calc-limits th,
+    .gyomu-calc-limits td {
+      border: 1px solid var(--border2);
+      padding: 6px 8px;
+      text-align: center;
+    }
+
+    .gyomu-calc-limits th {
+      background: var(--bg3);
+      font-weight: 700;
+    }
+
+    .gyomu-calc-limits tr.gc-limits-active td {
+      background: var(--blue-bg);
+      font-weight: 700;
+      color: var(--blue);
+    }
+
+    @media (max-width: 640px) {
+      .gyomu-calc-kpi-row {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
 </head>
 
@@ -1248,6 +1511,9 @@
     <div class="nav-item" data-sc="docs">
       <div class="nav-dot" style="background:var(--purple)"></div>📁 資料ライブラリ
     </div>
+    <div class="nav-item" data-sc="mhlw-guides">
+      <div class="nav-dot" style="background:var(--teal)"></div>📑 厚労省紹介資料
+    </div>
     <div class="nav-sec">コミュニケーション</div>
     <div class="nav-item" data-sc="board" style="justify-content:space-between;">
       <div style="display:flex;align-items:center;gap:9px;">
@@ -1283,6 +1549,7 @@
   <div class="main">
     <div class="topbar">
       <span class="topbar-title" id="page-title">ホーム</span>
+      <button class="btn btn-sm" style="margin-right:6px;" onclick="openGyomuCalcModal()">🧮 業務改善 助成金計算</button>
       <button class="btn btn-sm" style="margin-right:6px;" onclick="newHearing()">🆕 新規ヒアリング</button>
       <button class="btn btn-sm btn-primary" onclick="navTo('hearing')">＋ ヒアリング開始</button>
     </div>
@@ -1461,6 +1728,22 @@
           <button class="btn btn-sm btn-primary" onclick="openDocModal()">＋ 資料を追加</button>
         </div>
         <div id="doc-list"></div>
+      </div>
+
+      <!-- ══ MHLW GUIDES ══ -->
+      <div id="s-mhlw-guides" class="screen">
+        <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center;">
+          <p style="font-size:13px;color:var(--t2);flex:1;min-width:240px;">
+            人材開発支援助成金の各コースについて、厚生労働省が公開している紹介資料（パンフレット・Q&amp;A等）を自動取得します。
+          </p>
+          <button class="btn btn-sm btn-primary" onclick="refreshMhlwGuides()">🔄 最新を取得</button>
+        </div>
+        <div id="mhlw-guides-meta" style="font-size:12px;color:var(--t3);margin-bottom:12px;"></div>
+        <div id="mhlw-guides-notice"></div>
+        <div id="mhlw-guides-summary"></div>
+        <div id="mhlw-guides-body">
+          <div style="color:var(--t3);font-size:13px;padding:24px 0;text-align:center;">メニューを開くと最新資料を取得します…</div>
+        </div>
       </div>
 
       <!-- ══ BOARD ══ -->
@@ -1930,6 +2213,107 @@
             style="display:none;">削除</button>
           <button class="btn btn-primary" onclick="saveCalEvent()">保存</button>
         </div>
+      </div>
+    </div>
+
+    <!-- 業務改善助成金計算 -->
+    <div class="modal-bg" id="gyomu-calc-modal">
+      <div class="modal gyomu-calc-modal">
+        <div class="modal-head-row">
+          <div class="modal-title">🧮 業務改善 助成金計算</div>
+          <button type="button" class="modal-x" onclick="closeModal('gyomu-calc-modal')" aria-label="閉じる">×</button>
+        </div>
+        <div class="gyomu-calc-desc">
+          令和8年度の助成上限額と、上限いっぱいを受け取るのに必要な設備投資等の目安を計算します。10人以上の区分は特例事業者が10人以上の賃金引上げを行う場合に該当します。
+        </div>
+
+        <div class="form-group">
+          <div class="form-label">コース<span class="req">*</span></div>
+          <select class="fsel" id="gc-course" onchange="calcGyomuSubsidy()">
+            <option value="50">50円コース</option>
+            <option value="70">70円コース</option>
+            <option value="90">90円コース</option>
+          </select>
+          <div class="form-hint">50 / 70 / 90円コース（令和8年度）</div>
+        </div>
+
+        <div class="form-group">
+          <div class="form-label">引き上げる労働者数<span class="req">*</span></div>
+          <select class="fsel" id="gc-workers" onchange="calcGyomuSubsidy()">
+            <option value="1">1人</option>
+            <option value="2-3">2〜3人</option>
+            <option value="4-5">4〜5人</option>
+            <option value="6-7">6〜7人</option>
+            <option value="8+">8人以上</option>
+            <option value="10+">10人以上（特例事業者）</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <div class="form-label">引上げ前の事業場内最低賃金<span class="req">*</span></div>
+          <input class="finp" type="number" id="gc-wage" min="800" max="2000" step="1" value="1040"
+            placeholder="例：1040" oninput="calcGyomuSubsidy()">
+          <div class="form-hint" id="gc-wage-hint">1,050円未満 → 助成率 4/5（80%）</div>
+        </div>
+
+        <div class="form-group">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <input type="checkbox" id="gc-size30plus" style="width:16px;height:16px;accent-color:var(--blue);"
+              onchange="calcGyomuSubsidy()">
+            <span style="font-size:13px;color:var(--t2);font-weight:600;">事業場規模30人以上</span>
+          </label>
+          <div class="form-hint">未チェック＝30人未満（上限額が手厚い区分）。30人以上の場合はチェックしてください。</div>
+        </div>
+
+        <div class="form-group">
+          <div class="form-label">設備投資予定額（任意）</div>
+          <input class="finp" type="number" id="gc-invest" min="0" step="1000" placeholder="例：500000"
+            oninput="calcGyomuSubsidy()">
+          <div class="form-hint">入力すると支給見込み額も表示</div>
+        </div>
+
+        <div class="gyomu-calc-result">
+          <div class="gyomu-calc-result-title" id="gc-result-title">📊 計算結果（50円コース・1人・30人未満）</div>
+          <div class="gyomu-calc-kpi-row">
+            <div>
+              <div class="gyomu-calc-kpi-lbl">助成上限額</div>
+              <div class="gyomu-calc-kpi-val blue" id="gc-limit">¥400,000</div>
+            </div>
+            <div>
+              <div class="gyomu-calc-kpi-lbl">助成率</div>
+              <div class="gyomu-calc-kpi-val dark" id="gc-rate">4/5（80%）</div>
+            </div>
+            <div>
+              <div class="gyomu-calc-kpi-lbl">上限いっぱいに必要な設備投資等</div>
+              <div class="gyomu-calc-kpi-val green" id="gc-required">¥500,000 以上</div>
+            </div>
+          </div>
+          <hr class="gyomu-calc-divider" id="gc-trial-wrap" style="display:none;">
+          <div id="gc-trial-block" style="display:none;">
+            <div class="gyomu-calc-trial-lbl">設備投資予定額から試算</div>
+            <div class="gyomu-calc-kpi-val blue" id="gc-trial-amount">¥0</div>
+            <div class="form-hint" id="gc-trial-remain" style="margin-top:6px;"></div>
+          </div>
+          <div class="gyomu-calc-note">
+            支給額 ＝ min（設備投資等 × 助成率, 助成上限額）。設備投資等が上記以上なら助成上限まで全額受取可能です。
+          </div>
+        </div>
+
+        <details class="gyomu-calc-limits" id="gc-limits-details">
+          <summary id="gc-limits-summary">▶ 助成上限額一覧（令和8年度・30人未満）</summary>
+          <table>
+            <thead>
+              <tr>
+                <th>引上げ労働者数</th>
+                <th>50円コース</th>
+                <th>70円コース</th>
+                <th>90円コース</th>
+              </tr>
+            </thead>
+            <tbody id="gc-limits-tbody"></tbody>
+          </table>
+          <div class="form-hint" id="gc-limits-note" style="margin-top:8px;"></div>
+        </details>
       </div>
     </div>
 
@@ -2449,7 +2833,7 @@
 
 
 
-      const PAGE_TITLES = { home: 'ホーム', hearing: 'ヒアリング', 'memo-history': '面談・メモ履歴', grants: '助成金一覧', 'grant-detail': '助成金詳細', docs: '資料ライブラリ', board: '掲示板', calendar: 'カレンダー', message: 'メッセージ', admin: '従業員管理', password: 'パスワード変更' };
+      const PAGE_TITLES = { home: 'ホーム', hearing: 'ヒアリング', 'memo-history': '面談・メモ履歴', grants: '助成金一覧', 'grant-detail': '助成金詳細', docs: '資料ライブラリ', 'mhlw-guides': '厚労省紹介資料', board: '掲示板', calendar: 'カレンダー', message: 'メッセージ', admin: '従業員管理', password: 'パスワード変更' };
 
       // ★ window. を付けてHTMLから呼べるようにする
       window.navTo = function (id) {
@@ -2464,6 +2848,7 @@
         if (id === 'memo-history') renderMemoList();
         if (id === 'grants') renderGrants();
         if (id === 'docs') renderDocs();
+        if (id === 'mhlw-guides') renderMhlwGuides();
         if (id === 'board') { renderBoard(); renderUnreadBanner(); }
         if (id === 'calendar') renderCalendar();
         if (id === 'message') loadMsgDocPicker();
@@ -4253,10 +4638,511 @@
       };
 
       // ════════════════════════════════════════
+      // 業務改善助成金計算（令和8年度）
+      // ════════════════════════════════════════
+      var GYOMU_LIMITS = {
+        '1': { 50: [300000, 400000], 70: [400000, 500000], 90: [900000, 1000000] },
+        '2-3': { 50: [400000, 700000], 70: [500000, 1000000], 90: [1500000, 2400000] },
+        '4-5': { 50: [700000, 700000], 70: [1300000, 1300000], 90: [2700000, 2700000] },
+        '6-7': { 50: [900000, 900000], 70: [1800000, 1800000], 90: [3600000, 3600000] },
+        '8+': { 50: [1100000, 1100000], 70: [2300000, 2300000], 90: [4500000, 4500000] },
+        '10+': { 50: [1300000, 1300000], 70: [3000000, 3000000], 90: [6000000, 6000000] }
+      };
+      var GYOMU_WORKER_LABELS = {
+        '1': '1人', '2-3': '2〜3人', '4-5': '4〜5人', '6-7': '6〜7人', '8+': '8人以上', '10+': '10人以上'
+      };
+      var GYOMU_WORKER_ROWS = ['1', '2-3', '4-5', '6-7', '8+', '10+'];
+
+      function fmtYen(n) {
+        return '¥' + Math.round(n).toLocaleString('ja-JP');
+      }
+
+      function fmtMan(n) {
+        return (n / 10000).toLocaleString('ja-JP') + '万円';
+      }
+
+      function renderGyomuLimitTable(is30plus, selectedWorkers) {
+        var idx = is30plus ? 0 : 1;
+        var sizeLabel = is30plus ? '30人以上' : '30人未満';
+        document.getElementById('gc-limits-summary').textContent =
+          '▶ 助成上限額一覧（令和8年度・' + sizeLabel + '）';
+        document.getElementById('gc-limits-note').textContent =
+          is30plus
+            ? '※10人以上の区分は特例事業者が10人以上の賃金引上げを行う場合に該当します。'
+            : '※30人未満の事業場は1〜3人区分で上限額が手厚く設定されています。10人以上は特例事業者要件あり。';
+
+        var tbody = document.getElementById('gc-limits-tbody');
+        tbody.innerHTML = GYOMU_WORKER_ROWS.map(function (key) {
+          var row = GYOMU_LIMITS[key];
+          var label = GYOMU_WORKER_LABELS[key] + (key === '10+' ? '※' : '');
+          var active = key === selectedWorkers ? ' class="gc-limits-active"' : '';
+          return '<tr' + active + '><td>' + label + '</td>' +
+            '<td>' + fmtMan(row[50][idx]) + '</td>' +
+            '<td>' + fmtMan(row[70][idx]) + '</td>' +
+            '<td>' + fmtMan(row[90][idx]) + '</td></tr>';
+        }).join('');
+      }
+
+      window.openGyomuCalcModal = function () {
+        document.getElementById('gyomu-calc-modal').classList.add('on');
+        calcGyomuSubsidy();
+      };
+
+      window.calcGyomuSubsidy = function () {
+        var course = parseInt(document.getElementById('gc-course').value, 10);
+        var workers = document.getElementById('gc-workers').value;
+        var wage = parseFloat(document.getElementById('gc-wage').value);
+        var is30plus = document.getElementById('gc-size30plus').checked;
+        var investRaw = document.getElementById('gc-invest').value.trim();
+        var invest = investRaw === '' ? null : parseFloat(investRaw);
+
+        var limits = GYOMU_LIMITS[workers][course];
+        var limit = is30plus ? limits[0] : limits[1];
+        var rate = (isNaN(wage) || wage < 1050) ? 0.8 : 0.75;
+        var rateText = rate === 0.8 ? '4/5（80%）' : '3/4（75%）';
+        var required = Math.ceil(limit / rate);
+
+        var wageHint = document.getElementById('gc-wage-hint');
+        if (isNaN(wage) || wage <= 0) {
+          wageHint.textContent = '時給を入力すると助成率を表示します';
+        } else if (wage < 1050) {
+          wageHint.textContent = wage.toLocaleString('ja-JP') + '円 → 1,050円未満：助成率 4/5（80%）';
+        } else {
+          wageHint.textContent = wage.toLocaleString('ja-JP') + '円 → 1,050円以上：助成率 3/4（75%）';
+        }
+
+        var sizeLabel = is30plus ? '30人以上' : '30人未満';
+        document.getElementById('gc-result-title').textContent =
+          '📊 計算結果（' + course + '円コース・' + GYOMU_WORKER_LABELS[workers] + '・' + sizeLabel + '）';
+        document.getElementById('gc-limit').textContent = fmtYen(limit);
+        document.getElementById('gc-rate').textContent = rateText;
+        document.getElementById('gc-required').textContent = fmtYen(required) + ' 以上';
+
+        var trialWrap = document.getElementById('gc-trial-wrap');
+        var trialBlock = document.getElementById('gc-trial-block');
+        if (invest !== null && !isNaN(invest) && invest > 0) {
+          var payment = Math.min(Math.floor(invest * rate), limit);
+          var remain = limit - payment;
+          trialWrap.style.display = '';
+          trialBlock.style.display = '';
+          document.getElementById('gc-trial-amount').textContent = fmtYen(payment);
+          document.getElementById('gc-trial-remain').textContent =
+            remain > 0 ? 'あと ' + fmtYen(remain) + ' で上限' : '助成上限額に到達';
+        } else {
+          trialWrap.style.display = 'none';
+          trialBlock.style.display = 'none';
+        }
+
+        renderGyomuLimitTable(is30plus, workers);
+      };
+
+      // ════════════════════════════════════════
+      // MHLW GUIDES（人材開発支援助成金 紹介資料）
+      // ════════════════════════════════════════
+      const MHLW_GUIDES_STATE_KEY = 'gn2_mhlw_guides_state';
+      const MHLW_SOURCE_URL = 'https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/koyou_roudou/koyou/kyufukin/d01-1.html';
+      const MHLW_BASE_URL = 'https://www.mhlw.go.jp';
+
+      const MHLW_GUIDES_COURSES = [
+        { id: 'jinzai', name: '人材育成支援コース', description: '社員の職業訓練・定額制訓練などの経費・賃金助成', section_keyword: '人材育成支援コース', specs: [
+          { label: '概要リーフレット', must_include: ['人材育成支援コース', '4月8日'], must_exclude: ['5月14日', 'Q', 'A'] },
+          { label: '詳細版パンフレット', must_include: ['人材育成支援コース', '5月14日'], must_exclude: ['Q', 'A'] },
+          { label: '事業主Q&A', must_include: ['人材育成支援コース', 'Q', 'A'], must_exclude: ['賃金要件'] },
+        ]},
+        { id: 'kyuka', name: '教育訓練休暇等付与コース', description: '教育訓練休暇制度の導入・運用に関する助成', section_keyword: '教育訓練休暇等付与コース', specs: [
+          { label: '詳細版パンフレット', must_include: ['教育訓練休暇等付与コース', 'ご案内', '4月8日'], must_exclude: [] },
+          { label: '支給要領', must_include: ['支給要領'], must_exclude: [] },
+          { label: '事業主Q&A', must_include: ['教育訓練休暇等付与コース', 'Q', 'A'], must_exclude: ['賃金要件'] },
+        ]},
+        { id: 'toushi', name: '人への投資促進コース', description: '長時間労働の改善と能力開発を両立する訓練助成', section_keyword: '人への投資促進コース', specs: [
+          { label: '概要リーフレット', must_include: ['人への投資促進コース', '4月8日'], must_exclude: ['5月14日', 'Q', 'A', '教育訓練休暇等付与'] },
+          { label: '詳細版パンフレット', must_include: ['人への投資促進コース', '5月14日'], must_exclude: ['Q', 'A'] },
+          { label: '事業主Q&A', must_include: ['人への投資促進コース', 'Q', 'A'], must_exclude: ['賃金要件'] },
+        ]},
+        { id: 'reskilling', name: '事業展開等リスキリング支援コース', description: '新規事業展開に伴うリスキリング訓練の助成', section_keyword: '事業展開等リスキリング支援コース', specs: [
+          { label: '概要リーフレット', must_include: ['事業展開等リスキリング支援コース', '4月8日'], must_exclude: ['5月14日', 'Q', 'A', '活用'] },
+          { label: '詳細版パンフレット', must_include: ['事業展開等リスキリング支援コース', '5月14日'], must_exclude: ['Q', 'A', '活用'] },
+          { label: '活用事例集', must_include: ['活用事例'], must_exclude: [] },
+        ]},
+      ];
+
+      function mhlwNormalizeDigits(text) {
+        return String(text).replace(/[０-９]/g, function (ch) {
+          return String.fromCharCode(ch.charCodeAt(0) - 0xfee0);
+        });
+      }
+
+      function mhlwNormalizeText(text) {
+        return mhlwNormalizeDigits(
+          String(text).replace(/<[^>]+>/g, ' ').replace(/&amp;/g, '&').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim()
+        );
+      }
+
+      function mhlwParsePortalLinks(html) {
+        const links = [];
+        const seen = new Set();
+        const parts = html.split(/<h3\b[^>]*>/i);
+        for (let i = 1; i < parts.length; i++) {
+          const chunk = parts[i];
+          const headingEnd = chunk.search(/<\/h3>/i);
+          if (headingEnd < 0) continue;
+          const section = mhlwNormalizeText(chunk.slice(0, headingEnd));
+          const rest = chunk.slice(headingEnd);
+          const anchorRe = /<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+          let match;
+          while ((match = anchorRe.exec(rest)) !== null) {
+            const href = match[1];
+            const title = mhlwNormalizeText(match[2]);
+            const lower = href.toLowerCase();
+            if (!lower.includes('/content/') || !lower.endsWith('.pdf')) continue;
+            let absoluteUrl;
+            try { absoluteUrl = new URL(href, MHLW_BASE_URL).href; } catch (e) { continue; }
+            if (seen.has(absoluteUrl)) continue;
+            seen.add(absoluteUrl);
+            links.push({ section: section, title: title, url: absoluteUrl });
+          }
+        }
+        return links;
+      }
+
+      function mhlwLinkMatchesSpec(link, spec) {
+        const haystack = mhlwNormalizeText(link.section + ' ' + link.title);
+        if (spec.must_include.length && !spec.must_include.every(function (kw) { return haystack.includes(mhlwNormalizeDigits(kw)); })) return false;
+        if (spec.must_exclude.length && spec.must_exclude.some(function (kw) { return haystack.includes(mhlwNormalizeDigits(kw)); })) return false;
+        return true;
+      }
+
+      function mhlwBelongsToCourse(link, course) {
+        const haystack = mhlwNormalizeText(link.section + ' ' + link.title);
+        return haystack.includes(mhlwNormalizeDigits(course.section_keyword));
+      }
+
+      function mhlwPickGuideLink(links, course, spec) {
+        const candidates = links.filter(function (link) { return mhlwBelongsToCourse(link, course) && mhlwLinkMatchesSpec(link, spec); });
+        return candidates[0] || null;
+      }
+
+      function mhlwBuildCatalog(links) {
+        const checkedAt = new Date().toISOString();
+        const catalog = [];
+        MHLW_GUIDES_COURSES.forEach(function (course) {
+          course.specs.forEach(function (spec) {
+            const link = mhlwPickGuideLink(links, course, spec);
+            if (!link) {
+              catalog.push({
+                course_id: course.id, course_name: course.name, course_description: course.description,
+                label: spec.label, url: '', source_title: '', status: 'unavailable',
+                error: '厚労省ページに該当資料がありません', checked_at: checkedAt,
+              });
+              return;
+            }
+            catalog.push({
+              course_id: course.id, course_name: course.name, course_description: course.description,
+              label: spec.label, url: link.url, source_title: link.title, status: 'ready', checked_at: checkedAt,
+            });
+          });
+        });
+        return catalog;
+      }
+
+      function mhlwFallbackCatalog() {
+        const rows = [
+          ['jinzai', '人材育成支援コース', '概要リーフレット', 'https://www.mhlw.go.jp/content/11800000/001687559.pdf', '令和8年度版 人材育成支援コースのご案内（令和8年4月8日版）［536KB］'],
+          ['jinzai', '人材育成支援コース', '詳細版パンフレット', 'https://www.mhlw.go.jp/content/11800000/001705829.pdf', '令和8年度版 人材育成支援コースのご案内（令和8年5月14日版）［3.6MB］'],
+          ['jinzai', '人材育成支援コース', '事業主Q&A', 'https://www.mhlw.go.jp/content/11800000/001330281.pdf', '令和6年11月版 人材育成支援コース 事業主Q＆A［956KB］'],
+          ['kyuka', '教育訓練休暇等付与コース', '詳細版パンフレット', 'https://www.mhlw.go.jp/content/11800000/001687563.pdf', '令和8年度版 教育訓練休暇等付与コース・人への投資促進コース（長期教育訓練休暇等制度）のご案内（令和8年4月8日版）［1.6MB］'],
+          ['kyuka', '教育訓練休暇等付与コース', '支給要領', 'https://www.mhlw.go.jp/content/11800000/001687615.pdf', '支給要領（令和8年4月8日版）［554KB］'],
+          ['kyuka', '教育訓練休暇等付与コース', '事業主Q&A', 'https://www.mhlw.go.jp/content/11800000/001255026.pdf', '令和6年度版 教育訓練休暇等付与コース 事業主向けQ&A［543KB］'],
+          ['toushi', '人への投資促進コース', '概要リーフレット', 'https://www.mhlw.go.jp/content/11800000/001687616.pdf', '令和8年度版 人への投資促進コースのご案内（令和8年4月8日版）［732KB］'],
+          ['toushi', '人への投資促進コース', '詳細版パンフレット', 'https://www.mhlw.go.jp/content/11800000/001705830.pdf', '令和8年度版 人への投資促進コースのご案内（令和8年5月14日版）［4.9MB］'],
+          ['toushi', '人への投資促進コース', '事業主Q&A', 'https://www.mhlw.go.jp/content/11800000/001312790.pdf', '令和6年10月版 人への投資促進コース 事業主向けQ&A［1.1MB］'],
+          ['reskilling', '事業展開等リスキリング支援コース', '概要リーフレット', 'https://www.mhlw.go.jp/content/11800000/001687619.pdf', '令和8年度版 事業展開等リスキリング支援コースのご案内（令和8年4月8日版）［647KB］'],
+          ['reskilling', '事業展開等リスキリング支援コース', '詳細版パンフレット', 'https://www.mhlw.go.jp/content/11800000/001705831.pdf', '令和8年度版 事業展開等リスキリング支援コースのご案内（令和8年5月14日版）［3.7MB］'],
+          ['reskilling', '事業展開等リスキリング支援コース', '活用事例集', 'https://www.mhlw.go.jp/content/11800000/001538649.pdf', '事業展開等リスキリング支援コース 活用事例集［945KB］'],
+        ];
+        const descMap = {};
+        MHLW_GUIDES_COURSES.forEach(function (c) { descMap[c.id] = c.description; });
+        const checkedAt = new Date().toISOString();
+        return rows.map(function (r) {
+          return {
+            course_id: r[0], course_name: r[1], course_description: descMap[r[0]] || '',
+            label: r[2], url: r[3], source_title: r[4], status: 'ready', checked_at: checkedAt,
+          };
+        });
+      }
+
+      async function fetchMhlwGuidesPayload() {
+        const apiPaths = ['/api/mhlw-guides'];
+        if (window.location.origin && window.location.origin !== 'null') {
+          apiPaths.unshift(window.location.origin + '/api/mhlw-guides');
+        }
+        for (let i = 0; i < apiPaths.length; i++) {
+          try {
+            const res = await fetch(apiPaths[i], { cache: 'no-store' });
+            if (!res.ok) continue;
+            const data = await res.json();
+            if (data.catalog && data.catalog.length) {
+              data.catalog.forEach(function (item) {
+                const course = MHLW_GUIDES_COURSES.find(function (c) { return c.id === item.course_id; });
+                if (course && !item.course_description) item.course_description = course.description;
+              });
+              return { source_url: data.source_url || MHLW_SOURCE_URL, fetched_at: data.fetched_at || new Date().toISOString(), catalog: data.catalog, mode: 'api' };
+            }
+          } catch (e) { console.warn('MHLW API fetch failed:', apiPaths[i], e); }
+        }
+
+        try {
+          const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(MHLW_SOURCE_URL);
+          const res = await fetch(proxyUrl, { cache: 'no-store' });
+          if (res.ok) {
+            const html = await res.text();
+            const catalog = mhlwBuildCatalog(mhlwParsePortalLinks(html));
+            if (catalog.some(function (item) { return item.status === 'ready'; })) {
+              return { source_url: MHLW_SOURCE_URL, fetched_at: new Date().toISOString(), catalog: catalog, mode: 'proxy' };
+            }
+          }
+        } catch (e) { console.warn('MHLW proxy fetch failed:', e); }
+
+        return { source_url: MHLW_SOURCE_URL, fetched_at: new Date().toISOString(), catalog: mhlwFallbackCatalog(), mode: 'fallback' };
+      }
+
+      let mhlwGuidesLoaded = false;
+
+      function mhlwGuideItemKey(item) {
+        return item.course_id + '|' + item.label;
+      }
+
+      function loadMhlwGuidesState() {
+        try {
+          const raw = localStorage.getItem(MHLW_GUIDES_STATE_KEY);
+          if (!raw) return {};
+          const data = JSON.parse(raw);
+          return data.items || {};
+        } catch (e) {
+          return {};
+        }
+      }
+
+      function saveMhlwGuidesState(catalog) {
+        const items = {};
+        catalog.forEach(function (item) {
+          if (item.status === 'ready') {
+            items[mhlwGuideItemKey(item)] = {
+              url: item.url,
+              source_title: item.source_title,
+            };
+          }
+        });
+        localStorage.setItem(MHLW_GUIDES_STATE_KEY, JSON.stringify({
+          last_checked: new Date().toISOString(),
+          items: items,
+        }));
+      }
+
+      function describeMhlwGuideChanges(old, item) {
+        const reasons = [];
+        const oldTitle = old.source_title || '';
+        const oldUrl = old.url || '';
+
+        if (item.source_title !== oldTitle) {
+          if (oldTitle) {
+            reasons.push('資料の版・名称が更新されました');
+            reasons.push('以前: ' + oldTitle);
+            reasons.push('現在: ' + item.source_title);
+          } else {
+            reasons.push('現在の資料: ' + item.source_title);
+          }
+        } else if (item.url !== oldUrl) {
+          reasons.push('厚労省サイトで新しい版の資料に差し替えられました');
+          if (oldTitle) reasons.push('資料: ' + oldTitle);
+        }
+        return reasons;
+      }
+
+      function detectMhlwGuideChanges(catalog, previous) {
+        const hasPrevious = previous && Object.keys(previous).length > 0;
+        return catalog.map(function (item) {
+          const next = Object.assign({}, item);
+          if (item.status !== 'ready') {
+            next.change_type = 'unavailable';
+            next.change_reasons = [];
+            return next;
+          }
+          if (!hasPrevious) {
+            next.change_type = 'unchanged';
+            next.change_reasons = [];
+            return next;
+          }
+          const old = previous[mhlwGuideItemKey(item)];
+          if (!old) {
+            next.change_type = 'new';
+            next.change_reasons = ['新しく一覧に追加された資料です'];
+            return next;
+          }
+          if (item.url !== old.url || item.source_title !== old.source_title) {
+            next.change_type = 'updated';
+            next.change_reasons = describeMhlwGuideChanges(old, item);
+            return next;
+          }
+          next.change_type = 'unchanged';
+          next.change_reasons = [];
+          return next;
+        });
+      }
+
+      function escapeHtml(text) {
+        return String(text)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
+
+      function renderMhlwGuidesNotice(catalog) {
+        const el = document.getElementById('mhlw-guides-notice');
+        if (!el) return;
+        const newCount = catalog.filter(function (i) { return i.change_type === 'new'; }).length;
+        const updatedCount = catalog.filter(function (i) { return i.change_type === 'updated'; }).length;
+        if (!newCount && !updatedCount) {
+          el.innerHTML = '<div class="mhlw-notice mhlw-notice-none">前回確認時から資料内容の変更はありません。</div>';
+          return;
+        }
+        const parts = [];
+        if (updatedCount) parts.push('更新 ' + updatedCount + ' 件');
+        if (newCount) parts.push('新規 ' + newCount + ' 件');
+        el.innerHTML = '<div class="mhlw-notice mhlw-notice-alert">厚労省の資料内容に変更があります（' + escapeHtml(parts.join('・')) + '）</div>';
+      }
+
+      function renderMhlwGuidesSummary(catalog) {
+        const el = document.getElementById('mhlw-guides-summary');
+        if (!el) return;
+        const changed = catalog.filter(function (i) { return i.change_type === 'new' || i.change_type === 'updated'; });
+        if (!changed.length) {
+          el.innerHTML = '';
+          return;
+        }
+        const rows = changed.map(function (item) {
+          const badge = item.change_type === 'new' ? '新規' : '更新';
+          const badgeClass = item.change_type === 'new' ? 'mhlw-badge-new' : 'mhlw-badge-updated';
+          const details = (item.change_reasons || []).map(function (r) {
+            return '<li>' + escapeHtml(r) + '</li>';
+          }).join('');
+          return '<div class="mhlw-summary-item">' +
+            '<div style="font-size:13px;font-weight:800;margin-bottom:6px;">' +
+            '<span class="mhlw-badge ' + badgeClass + '">' + badge + '</span> ' +
+            escapeHtml(item.course_name) + ' / ' + escapeHtml(item.label) +
+            '</div>' +
+            (details ? '<ul class="mhlw-change" style="margin:0;padding-left:16px;">' + details + '</ul>' : '') +
+            '</div>';
+        }).join('');
+        el.innerHTML = '<div class="mhlw-summary"><div class="mhlw-summary-title">内容が更新された資料</div>' + rows + '</div>';
+      }
+
+      function renderMhlwGuidesBody(catalog) {
+        const el = document.getElementById('mhlw-guides-body');
+        if (!el) return;
+        const courses = ['jinzai', 'kyuka', 'toushi', 'reskilling'];
+        const courseNames = {};
+        catalog.forEach(function (item) { courseNames[item.course_id] = item.course_name; });
+        const courseDesc = {};
+        catalog.forEach(function (item) { courseDesc[item.course_id] = item.course_description; });
+
+        const html = courses.map(function (courseId) {
+          const items = catalog.filter(function (i) { return i.course_id === courseId; });
+          if (!items.length) return '';
+          const files = items.map(function (item) {
+            if (item.status !== 'ready') {
+              return '<div class="mhlw-file" style="opacity:.7;"><div><div class="mhlw-file-label">' +
+                escapeHtml(item.label) + '</div><div class="mhlw-file-title">取得不可: ' +
+                escapeHtml(item.error || '不明') + '</div></div></div>';
+            }
+            const cls = item.change_type === 'updated' ? ' updated' : (item.change_type === 'new' ? ' new' : '');
+            const badge = item.change_type === 'new'
+              ? '<span class="mhlw-badge mhlw-badge-new">新規</span>'
+              : (item.change_type === 'updated' ? '<span class="mhlw-badge mhlw-badge-updated">更新</span>' : '');
+            const changes = (item.change_reasons || []).length
+              ? '<div class="mhlw-change"><strong>内容の更新</strong><ul style="margin:4px 0 0;padding-left:16px;">' +
+                item.change_reasons.map(function (r) { return '<li>' + escapeHtml(r) + '</li>'; }).join('') +
+                '</ul></div>'
+              : '';
+            return '<div class="mhlw-file' + cls + '">' +
+              '<div style="flex:1;min-width:0;">' +
+              '<div class="mhlw-file-label">' + escapeHtml(item.label) + badge + '</div>' +
+              '<div class="mhlw-file-title">' + escapeHtml(item.source_title) + '</div>' +
+              changes +
+              '</div>' +
+              '<div style="display:flex;gap:6px;flex-shrink:0;">' +
+              '<a class="btn btn-xs btn-primary" href="' + escapeHtml(item.url) + '" target="_blank" rel="noopener">開く</a>' +
+              '<a class="btn btn-xs" href="' + escapeHtml(item.url) + '" target="_blank" rel="noopener" download>DL</a>' +
+              '</div></div>';
+          }).join('');
+          return '<div class="card mb18">' +
+            '<div style="font-size:15px;font-weight:800;margin-bottom:4px;">' + escapeHtml(courseNames[courseId] || courseId) + '</div>' +
+            '<div style="font-size:12px;color:var(--t2);margin-bottom:12px;">' + escapeHtml(courseDesc[courseId] || '') + '</div>' +
+            files +
+            '</div>';
+        }).join('');
+
+        el.innerHTML = html || '<div style="color:var(--t3);text-align:center;padding:24px 0;">資料がありません</div>';
+      }
+
+      async function refreshMhlwGuides() {
+        const body = document.getElementById('mhlw-guides-body');
+        const meta = document.getElementById('mhlw-guides-meta');
+        if (body) body.innerHTML = '<div style="color:var(--t3);font-size:13px;padding:24px 0;text-align:center;">厚労省サイトから取得中…</div>';
+        try {
+          const data = await fetchMhlwGuidesPayload();
+          const previous = loadMhlwGuidesState();
+          const catalog = detectMhlwGuideChanges(data.catalog || [], previous);
+          saveMhlwGuidesState(catalog);
+
+          if (meta) {
+            const when = new Date(data.fetched_at || Date.now()).toLocaleString('ja-JP');
+            let modeNote = '';
+            if (data.mode === 'fallback') {
+              modeNote = '　<span style="color:var(--amber);">※ 暫定表示（最新取得に失敗したため保存済み資料を表示）</span>';
+            } else if (data.mode === 'proxy') {
+              modeNote = '　<span style="color:var(--teal);">※ 厚労省サイトから直接取得</span>';
+            }
+            meta.innerHTML = '取得元: <a href="' + escapeHtml(data.source_url || MHLW_SOURCE_URL) + '" target="_blank" rel="noopener" style="color:var(--blue);">厚生労働省 人材開発支援助成金</a>　／　確認: ' + escapeHtml(when) + modeNote;
+          }
+          renderMhlwGuidesNotice(catalog);
+          renderMhlwGuidesSummary(catalog);
+          renderMhlwGuidesBody(catalog);
+          mhlwGuidesLoaded = true;
+        } catch (e) {
+          console.error(e);
+          const catalog = detectMhlwGuideChanges(mhlwFallbackCatalog(), loadMhlwGuidesState());
+          saveMhlwGuidesState(catalog);
+          if (meta) meta.innerHTML = '<span style="color:var(--amber);">暫定表示モードで資料を表示しています。</span>';
+          renderMhlwGuidesNotice(catalog);
+          renderMhlwGuidesSummary(catalog);
+          renderMhlwGuidesBody(catalog);
+          mhlwGuidesLoaded = true;
+        }
+      }
+
+      function renderMhlwGuides() {
+        refreshMhlwGuides();
+      }
+
+      window.refreshMhlwGuides = refreshMhlwGuides;
+      window.renderMhlwGuides = renderMhlwGuides;
+
+      // ════════════════════════════════════════
       // UTILS
       // ════════════════════════════════════════
       function closeModal(id) { document.getElementById(id)?.classList.remove('on'); }
-      document.querySelectorAll('.modal-bg').forEach(el => el.addEventListener('click', e => { if (e.target === el) el.classList.remove('on'); }));
+      document.querySelectorAll('.modal-bg').forEach(function (el) {
+        var downOnBg = false;
+        el.addEventListener('mousedown', function (e) { downOnBg = e.target === el; });
+        el.addEventListener('click', function (e) {
+          if (e.target !== el || !downOnBg) return;
+          var sel = window.getSelection();
+          if (sel && !sel.isCollapsed) return;
+          el.classList.remove('on');
+        });
+      });
       function showToast(msg, ok = true) { const t = document.getElementById('toast'); t.textContent = msg; t.className = 'toast show ' + (ok ? 'ok' : 'ng'); setTimeout(() => t.className = 'toast', 2800); }
       function today() { return new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }); }
 
