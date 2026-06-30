@@ -1959,15 +1959,17 @@
         </div> -->
         </div>
 
-        <!-- ══ PASSWORD ══ -->
-        <div id="s-password" class="screen">
+      </div><!-- /s-admin -->
+
+      <!-- ══ PASSWORD ══ -->
+      <div id="s-password" class="screen">
           <div class="card" style="max-width:440px;">
             <div style="font-size:15px;font-weight:800;margin-bottom:18px;">🔑 パスワード変更</div>
 
             <div class="form-group">
-              <div class="form-label form-group-name">名前:<input class="finp" id="pw-display-name" readonly
-                  style="background:var(--bg4); border:none; font-weight:bold;"></div>
-
+              <div class="form-label">名前</div>
+              <input class="finp" id="pw-display-name" readonly
+                style="background:var(--bg4); border:none; font-weight:bold;">
             </div>
             <div class="form-group">
               <div class="form-label">メールアドレス</div>
@@ -2829,26 +2831,35 @@
       // ════════════════════════════════════════
 
       async function loadMyProfileForPasswordPage() {
-        try {
-          // 1. 現在ログインしているユーザーのIDを取得
-          const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
-          if (authError || !user) return;
+        const nameEl = document.getElementById('pw-display-name');
+        const emailEl = document.getElementById('pw-display-email');
+        if (!nameEl || !emailEl) return;
 
-          // 2. profilesテーブルから名前とメールを取得
+        try {
+          const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+          if (authError || !user) {
+            emailEl.value = '';
+            nameEl.value = '未ログイン';
+            return;
+          }
+
+          emailEl.value = user.email || '';
+
           const { data: profile, error: dbError } = await supabaseClient
             .from('profiles')
             .select('display_name, email')
             .eq('id', user.id)
-            .single();
+            .maybeSingle();
 
-          if (dbError) throw dbError;
-
-          // 3. HTMLの入力欄にセット
-          document.getElementById('pw-display-name').value = profile.display_name || '未設定';
-          document.getElementById('pw-display-email').value = profile.email || user.email;
-
+          if (!dbError && profile) {
+            nameEl.value = profile.display_name || '未設定';
+            if (profile.email) emailEl.value = profile.email;
+          } else {
+            nameEl.value = user.user_metadata?.display_name || user.email || '未設定';
+          }
         } catch (err) {
-          console.error("プロフィールの読み込みに失敗しました:", err);
+          console.error('プロフィールの読み込みに失敗しました:', err);
+          nameEl.value = '読み込み失敗';
         }
       }
 
@@ -4709,17 +4720,21 @@
       }
 
       // パスワード変更
-      async function changePassword() {
-        // 1. 画面の入力値を取得
+      window.changePassword = async function () {
         const currentPass = document.getElementById('pw-current').value;
         const newPass = document.getElementById('pw-new').value;
         const confirmPass = document.getElementById('pw-confirm').value;
         const errEl = document.getElementById('pw-err');
 
-        // エラー表示をリセット
-        if (errEl) errEl.style.display = 'none';
+        if (errEl) {
+          errEl.textContent = '';
+          errEl.style.display = 'none';
+        }
 
-        // 2. バリデーション
+        if (!currentPass) {
+          showToast('現在のパスワードを入力してください', false);
+          return;
+        }
         if (!newPass || newPass.length < 8) {
           showToast('新しいパスワードは8文字以上にしてください', false);
           return;
@@ -4728,34 +4743,40 @@
           showToast('確認用パスワードが一致しません', false);
           return;
         }
+        if (currentPass === newPass) {
+          showToast('新しいパスワードは現在のパスワードと異なるものにしてください', false);
+          return;
+        }
 
         try {
-          // 3. 【重要】supabaseClient（冒頭で定義された変数名）を使用してAuthを更新
-          // ログイン中のユーザー自身のパスワードをSupabaseのデータベース側で書き換えます
-          const { data, error } = await supabaseClient.auth.updateUser({
-            password: newPass
-          });
+          const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+          if (userError || !user || !user.email) throw new Error('ログイン情報を取得できませんでした');
 
+          const { error: verifyError } = await supabaseClient.auth.signInWithPassword({
+            email: user.email,
+            password: currentPass
+          });
+          if (verifyError) throw new Error('現在のパスワードが正しくありません');
+
+          const { error } = await supabaseClient.auth.updateUser({ password: newPass });
           if (error) throw error;
 
-          // 4. 成功時の処理
-          ['pw-current', 'pw-new', 'pw-confirm'].forEach(i => {
-            const el = document.getElementById(i);
+          ['pw-current', 'pw-new', 'pw-confirm'].forEach(function (id) {
+            const el = document.getElementById(id);
             if (el) el.value = '';
           });
 
           showToast('パスワードを更新しました');
-
         } catch (err) {
           console.error('Password update error:', err);
-          // エラー内容を画面に表示
+          const message = err.message || '通信エラー';
           if (errEl) {
-            errEl.textContent = '更新失敗: ' + (err.message || '通信エラー');
+            errEl.textContent = '更新失敗: ' + message;
             errEl.style.display = 'block';
           }
-          showToast('更新に失敗しました', false);
+          showToast(message, false);
         }
-      }
+      };
 
       // 新規ヒアリング（入力をリセットして画面を開く）
       window.newHearing = function () {
