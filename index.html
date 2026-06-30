@@ -1512,7 +1512,7 @@
       <div class="nav-dot" style="background:var(--purple)"></div>📁 資料ライブラリ
     </div>
     <div class="nav-item" data-sc="mhlw-guides">
-      <div class="nav-dot" style="background:var(--teal)"></div>📑 厚労省紹介資料
+      <div class="nav-dot" style="background:var(--teal)"></div>📑 助成金公式資料
     </div>
     <div class="nav-sec">コミュニケーション</div>
     <div class="nav-item" data-sc="board" style="justify-content:space-between;">
@@ -1734,7 +1734,7 @@
       <div id="s-mhlw-guides" class="screen">
         <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center;">
           <p style="font-size:13px;color:var(--t2);flex:1;min-width:240px;">
-            人材開発支援助成金の各コースについて、厚生労働省が公開している紹介資料（パンフレット・Q&amp;A等）を自動取得します。
+            キャリアアップ・両立支援・人材開発・65歳超・トライアル・働き方改革・業務改善など、主要な雇用助成金の公式紹介資料とコース情報をまとめて表示します。
           </p>
           <button class="btn btn-sm btn-primary" onclick="refreshMhlwGuides()">🔄 最新を取得</button>
         </div>
@@ -2833,7 +2833,7 @@
 
 
 
-      const PAGE_TITLES = { home: 'ホーム', hearing: 'ヒアリング', 'memo-history': '面談・メモ履歴', grants: '助成金一覧', 'grant-detail': '助成金詳細', docs: '資料ライブラリ', 'mhlw-guides': '厚労省紹介資料', board: '掲示板', calendar: 'カレンダー', message: 'メッセージ', admin: '従業員管理', password: 'パスワード変更' };
+      const PAGE_TITLES = { home: 'ホーム', hearing: 'ヒアリング', 'memo-history': '面談・メモ履歴', grants: '助成金一覧', 'grant-detail': '助成金詳細', docs: '資料ライブラリ', 'mhlw-guides': '助成金公式資料', board: '掲示板', calendar: 'カレンダー', message: 'メッセージ', admin: '従業員管理', password: 'パスワード変更' };
 
       // ★ window. を付けてHTMLから呼べるようにする
       window.navTo = function (id) {
@@ -4737,45 +4737,65 @@
       };
 
       // ════════════════════════════════════════
-      // MHLW GUIDES（人材開発支援助成金 紹介資料）
+      // MHLW GUIDES（全助成金 公式資料）
       // ════════════════════════════════════════
       const MHLW_GUIDES_STATE_KEY = 'gn2_mhlw_guides_state';
-      const MHLW_SOURCE_URL = 'https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/koyou_roudou/koyou/kyufukin/d01-1.html';
       const MHLW_BASE_URL = 'https://www.mhlw.go.jp';
+      const MHLW_PROGRAM_ORDER = ['careerup', 'ryoritsu', 'jinzai', '65plus', 'trial', 'hatarakikata', 'gyomu'];
 
-      const MHLW_GUIDES_COURSES = [
-        { id: 'jinzai', name: '人材育成支援コース', description: '社員の職業訓練・定額制訓練などの経費・賃金助成', section_keyword: '人材育成支援コース', specs: [
-          { label: '概要リーフレット', must_include: ['人材育成支援コース', '4月8日'], must_exclude: ['5月14日', 'Q', 'A'] },
-          { label: '詳細版パンフレット', must_include: ['人材育成支援コース', '5月14日'], must_exclude: ['Q', 'A'] },
-          { label: '事業主Q&A', must_include: ['人材育成支援コース', 'Q', 'A'], must_exclude: ['賃金要件'] },
+      const MHLW_PROGRAMS = [
+        { id: 'careerup', name: 'キャリアアップ助成金', description: '非正規雇用労働者の正社員化・処遇改善を支援', source_url: 'https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/koyou_roudou/part_haken/jigyounushi/career.html', grant_prefix: 'キャリアアップ助成金', mode: 'auto' },
+        { id: 'ryoritsu', name: '両立支援等助成金', description: '仕事と育児・介護等の両立支援に取り組む事業主を支援', source_url: 'https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/kodomo/shokuba_kosodate/ryouritsu01/index.html', grant_prefix: '両立支援等助成金', mode: 'auto' },
+        { id: 'jinzai', name: '人材開発支援助成金', description: '従業員の職業訓練・能力開発のための研修・訓練を支援', source_url: 'https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/koyou_roudou/koyou/kyufukin/d01-1.html', grant_prefix: '人材開発支援助成金', mode: 'specs', courses: [
+          { id: 'jinzai', name: '人材育成支援コース', description: '社員の職業訓練・定額制訓練などの経費・賃金助成', section_keyword: '人材育成支援コース', specs: [
+            { label: '概要リーフレット', must_include: ['人材育成支援コース', '4月8日'], must_exclude: ['5月14日', 'Q', 'A'] },
+            { label: '詳細版パンフレット', must_include: ['人材育成支援コース', '5月14日'], must_exclude: ['Q', 'A'] },
+            { label: '事業主Q&A', must_include: ['人材育成支援コース', 'Q', 'A'], must_exclude: ['賃金要件'] },
+          ]},
+          { id: 'kyuka', name: '教育訓練休暇等付与コース', description: '教育訓練休暇制度の導入・運用に関する助成', section_keyword: '教育訓練休暇等付与コース', specs: [
+            { label: '詳細版パンフレット', must_include: ['教育訓練休暇等付与コース', 'ご案内', '4月8日'], must_exclude: [] },
+            { label: '支給要領', must_include: ['支給要領'], must_exclude: [] },
+            { label: '事業主Q&A', must_include: ['教育訓練休暇等付与コース', 'Q', 'A'], must_exclude: ['賃金要件'] },
+          ]},
+          { id: 'toushi', name: '人への投資促進コース', description: '長時間労働の改善と能力開発を両立する訓練助成', section_keyword: '人への投資促進コース', specs: [
+            { label: '概要リーフレット', must_include: ['人への投資促進コース', '4月8日'], must_exclude: ['5月14日', 'Q', 'A', '教育訓練休暇等付与'] },
+            { label: '詳細版パンフレット', must_include: ['人への投資促進コース', '5月14日'], must_exclude: ['Q', 'A'] },
+            { label: '事業主Q&A', must_include: ['人への投資促進コース', 'Q', 'A'], must_exclude: ['賃金要件'] },
+          ]},
+          { id: 'reskilling', name: '事業展開等リスキリング支援コース', description: '新規事業展開に伴うリスキリング訓練の助成', section_keyword: '事業展開等リスキリング支援コース', specs: [
+            { label: '概要リーフレット', must_include: ['事業展開等リスキリング支援コース', '4月8日'], must_exclude: ['5月14日', 'Q', 'A', '活用'] },
+            { label: '詳細版パンフレット', must_include: ['事業展開等リスキリング支援コース', '5月14日'], must_exclude: ['Q', 'A', '活用'] },
+            { label: '活用事例集', must_include: ['活用事例'], must_exclude: [] },
+          ]},
         ]},
-        { id: 'kyuka', name: '教育訓練休暇等付与コース', description: '教育訓練休暇制度の導入・運用に関する助成', section_keyword: '教育訓練休暇等付与コース', specs: [
-          { label: '詳細版パンフレット', must_include: ['教育訓練休暇等付与コース', 'ご案内', '4月8日'], must_exclude: [] },
-          { label: '支給要領', must_include: ['支給要領'], must_exclude: [] },
-          { label: '事業主Q&A', must_include: ['教育訓練休暇等付与コース', 'Q', 'A'], must_exclude: ['賃金要件'] },
-        ]},
-        { id: 'toushi', name: '人への投資促進コース', description: '長時間労働の改善と能力開発を両立する訓練助成', section_keyword: '人への投資促進コース', specs: [
-          { label: '概要リーフレット', must_include: ['人への投資促進コース', '4月8日'], must_exclude: ['5月14日', 'Q', 'A', '教育訓練休暇等付与'] },
-          { label: '詳細版パンフレット', must_include: ['人への投資促進コース', '5月14日'], must_exclude: ['Q', 'A'] },
-          { label: '事業主Q&A', must_include: ['人への投資促進コース', 'Q', 'A'], must_exclude: ['賃金要件'] },
-        ]},
-        { id: 'reskilling', name: '事業展開等リスキリング支援コース', description: '新規事業展開に伴うリスキリング訓練の助成', section_keyword: '事業展開等リスキリング支援コース', specs: [
-          { label: '概要リーフレット', must_include: ['事業展開等リスキリング支援コース', '4月8日'], must_exclude: ['5月14日', 'Q', 'A', '活用'] },
-          { label: '詳細版パンフレット', must_include: ['事業展開等リスキリング支援コース', '5月14日'], must_exclude: ['Q', 'A', '活用'] },
-          { label: '活用事例集', must_include: ['活用事例'], must_exclude: [] },
-        ]},
+        { id: '65plus', name: '65歳超雇用推進助成金', description: '65歳以上への定年引上げや高年齢者の雇用管理制度の整備を支援', source_url: 'https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/0000139692.html', grant_prefix: '65歳超雇用推進助成金', mode: 'auto' },
+        { id: 'trial', name: 'トライアル雇用助成金', description: '就職困難な求職者の試行雇用（トライアル雇用）を支援', source_url: 'https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/koyou_roudou/koyou/kyufukin/trial_koyou.html', grant_prefix: 'トライアル雇用助成金', mode: 'auto' },
+        { id: 'hatarakikata', name: '働き方改革推進支援助成金', description: '労働時間短縮や有給休暇取得促進など働き方改革の取組を支援', source_url: 'https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/0000120692.html', grant_prefix: '働き方改革推進支援助成金', mode: 'auto' },
+        { id: 'gyomu', name: '業務改善助成金', description: '最低賃金の引上げと生産性向上のための設備投資等を支援', source_url: 'https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/koyou_roudou/roudoukijun/zigyonushi/shienjigyou/03.html', grant_prefix: '業務改善助成金', mode: 'auto' },
       ];
 
       function mhlwNormalizeDigits(text) {
-        return String(text).replace(/[０-９]/g, function (ch) {
-          return String.fromCharCode(ch.charCodeAt(0) - 0xfee0);
-        });
+        return String(text).replace(/[０-９]/g, function (ch) { return String.fromCharCode(ch.charCodeAt(0) - 0xfee0); });
       }
 
       function mhlwNormalizeText(text) {
-        return mhlwNormalizeDigits(
-          String(text).replace(/<[^>]+>/g, ' ').replace(/&amp;/g, '&').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim()
-        );
+        return mhlwNormalizeDigits(String(text).replace(/<[^>]+>/g, ' ').replace(/&amp;/g, '&').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim());
+      }
+
+      function mhlwCollectPdfAnchors(html, section, links, seen) {
+        const anchorRe = /<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+        let match;
+        while ((match = anchorRe.exec(html)) !== null) {
+          const href = match[1];
+          const title = mhlwNormalizeText(match[2]);
+          const lower = href.toLowerCase();
+          if (!lower.includes('/content/') || !lower.endsWith('.pdf')) continue;
+          let absoluteUrl;
+          try { absoluteUrl = new URL(href, MHLW_BASE_URL).href; } catch (e) { continue; }
+          if (seen.has(absoluteUrl)) continue;
+          seen.add(absoluteUrl);
+          links.push({ section: section, title: title, url: absoluteUrl });
+        }
       }
 
       function mhlwParsePortalLinks(html) {
@@ -4787,22 +4807,23 @@
           const headingEnd = chunk.search(/<\/h3>/i);
           if (headingEnd < 0) continue;
           const section = mhlwNormalizeText(chunk.slice(0, headingEnd));
-          const rest = chunk.slice(headingEnd);
-          const anchorRe = /<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
-          let match;
-          while ((match = anchorRe.exec(rest)) !== null) {
-            const href = match[1];
-            const title = mhlwNormalizeText(match[2]);
-            const lower = href.toLowerCase();
-            if (!lower.includes('/content/') || !lower.endsWith('.pdf')) continue;
-            let absoluteUrl;
-            try { absoluteUrl = new URL(href, MHLW_BASE_URL).href; } catch (e) { continue; }
-            if (seen.has(absoluteUrl)) continue;
-            seen.add(absoluteUrl);
-            links.push({ section: section, title: title, url: absoluteUrl });
-          }
+          mhlwCollectPdfAnchors(chunk.slice(headingEnd), section, links, seen);
         }
+        mhlwCollectPdfAnchors(html, '', links, seen);
         return links;
+      }
+
+      function mhlwIsIntroDoc(title) {
+        if (/様式|届出|チェックリスト|実績報告|Word|Excel|xlsx|通知文|記入例/i.test(title)) return false;
+        return /パンフレット|リーフレット|Q.?＆?A|ご案内|手引き|概要|活用事例|案内/i.test(title);
+      }
+
+      function mhlwGuessDocLabel(title) {
+        if (/Q.?＆?A/i.test(title)) return 'Q&A';
+        if (/リーフレット/i.test(title)) return 'リーフレット';
+        if (/パンフレット|手引き/i.test(title)) return 'パンフレット';
+        if (/活用事例/i.test(title)) return '活用事例集';
+        return '紹介資料';
       }
 
       function mhlwLinkMatchesSpec(link, spec) {
@@ -4818,57 +4839,83 @@
       }
 
       function mhlwPickGuideLink(links, course, spec) {
-        const candidates = links.filter(function (link) { return mhlwBelongsToCourse(link, course) && mhlwLinkMatchesSpec(link, spec); });
-        return candidates[0] || null;
+        return links.find(function (link) { return mhlwBelongsToCourse(link, course) && mhlwLinkMatchesSpec(link, spec); }) || null;
       }
 
-      function mhlwBuildCatalog(links) {
+      function mhlwBuildSpecsCatalog(links, program) {
         const checkedAt = new Date().toISOString();
         const catalog = [];
-        MHLW_GUIDES_COURSES.forEach(function (course) {
+        (program.courses || []).forEach(function (course) {
           course.specs.forEach(function (spec) {
             const link = mhlwPickGuideLink(links, course, spec);
-            if (!link) {
-              catalog.push({
-                course_id: course.id, course_name: course.name, course_description: course.description,
-                label: spec.label, url: '', source_title: '', status: 'unavailable',
-                error: '厚労省ページに該当資料がありません', checked_at: checkedAt,
-              });
-              return;
-            }
             catalog.push({
+              program_id: program.id, program_name: program.name,
               course_id: course.id, course_name: course.name, course_description: course.description,
-              label: spec.label, url: link.url, source_title: link.title, status: 'ready', checked_at: checkedAt,
+              label: spec.label, url: link ? link.url : '', source_title: link ? link.title : '',
+              status: link ? 'ready' : 'unavailable',
+              error: link ? '' : '厚労省ページに該当資料がありません',
+              checked_at: checkedAt,
             });
           });
         });
         return catalog;
       }
 
-      function mhlwFallbackCatalog() {
-        const rows = [
-          ['jinzai', '人材育成支援コース', '概要リーフレット', 'https://www.mhlw.go.jp/content/11800000/001687559.pdf', '令和8年度版 人材育成支援コースのご案内（令和8年4月8日版）［536KB］'],
-          ['jinzai', '人材育成支援コース', '詳細版パンフレット', 'https://www.mhlw.go.jp/content/11800000/001705829.pdf', '令和8年度版 人材育成支援コースのご案内（令和8年5月14日版）［3.6MB］'],
-          ['jinzai', '人材育成支援コース', '事業主Q&A', 'https://www.mhlw.go.jp/content/11800000/001330281.pdf', '令和6年11月版 人材育成支援コース 事業主Q＆A［956KB］'],
-          ['kyuka', '教育訓練休暇等付与コース', '詳細版パンフレット', 'https://www.mhlw.go.jp/content/11800000/001687563.pdf', '令和8年度版 教育訓練休暇等付与コース・人への投資促進コース（長期教育訓練休暇等制度）のご案内（令和8年4月8日版）［1.6MB］'],
-          ['kyuka', '教育訓練休暇等付与コース', '支給要領', 'https://www.mhlw.go.jp/content/11800000/001687615.pdf', '支給要領（令和8年4月8日版）［554KB］'],
-          ['kyuka', '教育訓練休暇等付与コース', '事業主Q&A', 'https://www.mhlw.go.jp/content/11800000/001255026.pdf', '令和6年度版 教育訓練休暇等付与コース 事業主向けQ&A［543KB］'],
-          ['toushi', '人への投資促進コース', '概要リーフレット', 'https://www.mhlw.go.jp/content/11800000/001687616.pdf', '令和8年度版 人への投資促進コースのご案内（令和8年4月8日版）［732KB］'],
-          ['toushi', '人への投資促進コース', '詳細版パンフレット', 'https://www.mhlw.go.jp/content/11800000/001705830.pdf', '令和8年度版 人への投資促進コースのご案内（令和8年5月14日版）［4.9MB］'],
-          ['toushi', '人への投資促進コース', '事業主Q&A', 'https://www.mhlw.go.jp/content/11800000/001312790.pdf', '令和6年10月版 人への投資促進コース 事業主向けQ&A［1.1MB］'],
-          ['reskilling', '事業展開等リスキリング支援コース', '概要リーフレット', 'https://www.mhlw.go.jp/content/11800000/001687619.pdf', '令和8年度版 事業展開等リスキリング支援コースのご案内（令和8年4月8日版）［647KB］'],
-          ['reskilling', '事業展開等リスキリング支援コース', '詳細版パンフレット', 'https://www.mhlw.go.jp/content/11800000/001705831.pdf', '令和8年度版 事業展開等リスキリング支援コースのご案内（令和8年5月14日版）［3.7MB］'],
-          ['reskilling', '事業展開等リスキリング支援コース', '活用事例集', 'https://www.mhlw.go.jp/content/11800000/001538649.pdf', '事業展開等リスキリング支援コース 活用事例集［945KB］'],
-        ];
-        const descMap = {};
-        MHLW_GUIDES_COURSES.forEach(function (c) { descMap[c.id] = c.description; });
+      function mhlwBuildAutoCatalog(links, program) {
         const checkedAt = new Date().toISOString();
-        return rows.map(function (r) {
-          return {
-            course_id: r[0], course_name: r[1], course_description: descMap[r[0]] || '',
-            label: r[2], url: r[3], source_title: r[4], status: 'ready', checked_at: checkedAt,
-          };
+        const seen = new Set();
+        const catalog = [];
+        links.filter(function (link) { return mhlwIsIntroDoc(link.title); }).forEach(function (link) {
+          if (seen.has(link.url)) return;
+          seen.add(link.url);
+          catalog.push({
+            program_id: program.id, program_name: program.name,
+            course_id: program.id, course_name: program.name, course_description: program.description,
+            label: mhlwGuessDocLabel(link.title), url: link.url, source_title: link.title,
+            status: 'ready', checked_at: checkedAt,
+          });
         });
+        return catalog;
+      }
+
+      function mhlwBuildProgramCatalog(html, program) {
+        const links = mhlwParsePortalLinks(html);
+        return program.mode === 'specs' ? mhlwBuildSpecsCatalog(links, program) : mhlwBuildAutoCatalog(links, program);
+      }
+
+      function mhlwGrantIdToProgramId(grantId) {
+        const map = { g01: 'careerup', g02: 'careerup', g03: 'careerup', g04: 'careerup', g05: 'careerup', g06: 'ryoritsu', g07: 'ryoritsu', g08: 'ryoritsu', g09: 'ryoritsu', g10: 'ryoritsu', g11: 'ryoritsu', g12: 'jinzai', g13: 'jinzai', g14: 'jinzai', g15: '65plus', g16: '65plus', g17: 'trial', g18: 'hatarakikata', g19: 'gyomu' };
+        return map[grantId] || 'other';
+      }
+
+      function mhlwFallbackCatalog() {
+        const checkedAt = new Date().toISOString();
+        const programById = {};
+        MHLW_PROGRAMS.forEach(function (p) { programById[p.id] = p; });
+        const seen = new Set();
+        const catalog = [];
+        defaultDocs().forEach(function (doc) {
+          if (!doc.url) return;
+          if (seen.has(doc.url)) return;
+          seen.add(doc.url);
+          const pid = mhlwGrantIdToProgramId(doc.grantId);
+          const program = programById[pid];
+          if (!program) return;
+          catalog.push({
+            program_id: program.id, program_name: program.name,
+            course_id: program.id, course_name: program.name, course_description: program.description,
+            label: mhlwGuessDocLabel(doc.name), url: doc.url, source_title: doc.name,
+            status: 'ready', checked_at: checkedAt,
+          });
+        });
+        return catalog;
+      }
+
+      async function mhlwFetchHtml(url) {
+        const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url);
+        const res = await fetch(proxyUrl, { cache: 'no-store' });
+        if (!res.ok) throw new Error('fetch failed');
+        return res.text();
       }
 
       async function fetchMhlwGuidesPayload() {
@@ -4882,34 +4929,34 @@
             if (!res.ok) continue;
             const data = await res.json();
             if (data.catalog && data.catalog.length) {
-              data.catalog.forEach(function (item) {
-                const course = MHLW_GUIDES_COURSES.find(function (c) { return c.id === item.course_id; });
-                if (course && !item.course_description) item.course_description = course.description;
-              });
-              return { source_url: data.source_url || MHLW_SOURCE_URL, fetched_at: data.fetched_at || new Date().toISOString(), catalog: data.catalog, mode: 'api' };
+              return { programs: MHLW_PROGRAMS, fetched_at: data.fetched_at || new Date().toISOString(), catalog: data.catalog, mode: 'api' };
             }
           } catch (e) { console.warn('MHLW API fetch failed:', apiPaths[i], e); }
         }
 
         try {
-          const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(MHLW_SOURCE_URL);
-          const res = await fetch(proxyUrl, { cache: 'no-store' });
-          if (res.ok) {
-            const html = await res.text();
-            const catalog = mhlwBuildCatalog(mhlwParsePortalLinks(html));
-            if (catalog.some(function (item) { return item.status === 'ready'; })) {
-              return { source_url: MHLW_SOURCE_URL, fetched_at: new Date().toISOString(), catalog: catalog, mode: 'proxy' };
+          const parts = await Promise.all(MHLW_PROGRAMS.map(async function (program) {
+            try {
+              const html = await mhlwFetchHtml(program.source_url);
+              return mhlwBuildProgramCatalog(html, program);
+            } catch (e) {
+              console.warn('MHLW proxy program failed:', program.id, e);
+              return [];
             }
+          }));
+          const catalog = parts.flat();
+          if (catalog.some(function (item) { return item.status === 'ready'; })) {
+            return { programs: MHLW_PROGRAMS, fetched_at: new Date().toISOString(), catalog: catalog, mode: 'proxy' };
           }
         } catch (e) { console.warn('MHLW proxy fetch failed:', e); }
 
-        return { source_url: MHLW_SOURCE_URL, fetched_at: new Date().toISOString(), catalog: mhlwFallbackCatalog(), mode: 'fallback' };
+        return { programs: MHLW_PROGRAMS, fetched_at: new Date().toISOString(), catalog: mhlwFallbackCatalog(), mode: 'fallback' };
       }
 
       let mhlwGuidesLoaded = false;
 
       function mhlwGuideItemKey(item) {
-        return item.course_id + '|' + item.label;
+        return (item.program_id || item.course_id) + '|' + (item.course_id || '') + '|' + item.label + '|' + item.url;
       }
 
       function loadMhlwGuidesState() {
@@ -5030,7 +5077,9 @@
           return '<div class="mhlw-summary-item">' +
             '<div style="font-size:13px;font-weight:800;margin-bottom:6px;">' +
             '<span class="mhlw-badge ' + badgeClass + '">' + badge + '</span> ' +
-            escapeHtml(item.course_name) + ' / ' + escapeHtml(item.label) +
+            escapeHtml(item.program_name || item.course_name) +
+            (item.course_name && item.program_name && item.course_name !== item.program_name ? ' / ' + escapeHtml(item.course_name) : '') +
+            (item.label ? ' / ' + escapeHtml(item.label) : '') +
             '</div>' +
             (details ? '<ul class="mhlw-change" style="margin:0;padding-left:16px;">' + details + '</ul>' : '') +
             '</div>';
@@ -5038,48 +5087,99 @@
         el.innerHTML = '<div class="mhlw-summary"><div class="mhlw-summary-title">内容が更新された資料</div>' + rows + '</div>';
       }
 
+      function mhlwGetGrantsForProgram(program) {
+        const grants = (typeof GRANTS !== 'undefined' && GRANTS.length) ? GRANTS : defaultGrants();
+        return grants.filter(function (g) { return g.name.indexOf(program.grant_prefix) === 0; });
+      }
+
+      function renderMhlwGrantCourses(program) {
+        const grants = mhlwGetGrantsForProgram(program);
+        if (!grants.length) return '';
+        const rows = grants.map(function (g) {
+          return '<div style="padding:10px 12px;border:1px solid var(--border);border-radius:var(--r);margin-bottom:8px;background:var(--bg3);">' +
+            '<div style="font-size:13px;font-weight:800;margin-bottom:4px;">' + escapeHtml(g.name) + '</div>' +
+            '<div style="font-size:12px;color:var(--t2);line-height:1.55;margin-bottom:6px;">' + escapeHtml(g.summary || '') + '</div>' +
+            '<div style="font-size:12px;font-weight:800;color:var(--amber);">' + escapeHtml(g.amount || '') + '</div>' +
+            '</div>';
+        }).join('');
+        return '<div style="margin-bottom:14px;"><div style="font-size:12px;font-weight:800;color:var(--t3);margin-bottom:8px;">コース一覧（' + grants.length + '件）</div>' + rows + '</div>';
+      }
+
+      function renderMhlwFileItem(item) {
+        if (item.status !== 'ready') {
+          return '<div class="mhlw-file" style="opacity:.7;"><div><div class="mhlw-file-label">' +
+            escapeHtml(item.label) + '</div><div class="mhlw-file-title">取得不可: ' +
+            escapeHtml(item.error || '不明') + '</div></div></div>';
+        }
+        const cls = item.change_type === 'updated' ? ' updated' : (item.change_type === 'new' ? ' new' : '');
+        const badge = item.change_type === 'new'
+          ? '<span class="mhlw-badge mhlw-badge-new">新規</span>'
+          : (item.change_type === 'updated' ? '<span class="mhlw-badge mhlw-badge-updated">更新</span>' : '');
+        const changes = (item.change_reasons || []).length
+          ? '<div class="mhlw-change"><strong>内容の更新</strong><ul style="margin:4px 0 0;padding-left:16px;">' +
+            item.change_reasons.map(function (r) { return '<li>' + escapeHtml(r) + '</li>'; }).join('') +
+            '</ul></div>'
+          : '';
+        const isPdf = /\.pdf(\?|$)/i.test(item.url);
+        const dlBtn = isPdf
+          ? '<a class="btn btn-xs" href="' + escapeHtml(item.url) + '" target="_blank" rel="noopener" download>DL</a>'
+          : '';
+        return '<div class="mhlw-file' + cls + '">' +
+          '<div style="flex:1;min-width:0;">' +
+          '<div class="mhlw-file-label">' + escapeHtml(item.label) + badge + '</div>' +
+          '<div class="mhlw-file-title">' + escapeHtml(item.source_title) + '</div>' +
+          changes +
+          '</div>' +
+          '<div style="display:flex;gap:6px;flex-shrink:0;">' +
+          '<a class="btn btn-xs btn-primary" href="' + escapeHtml(item.url) + '" target="_blank" rel="noopener">開く</a>' +
+          dlBtn +
+          '</div></div>';
+      }
+
       function renderMhlwGuidesBody(catalog) {
         const el = document.getElementById('mhlw-guides-body');
         if (!el) return;
-        const courses = ['jinzai', 'kyuka', 'toushi', 'reskilling'];
-        const courseNames = {};
-        catalog.forEach(function (item) { courseNames[item.course_id] = item.course_name; });
-        const courseDesc = {};
-        catalog.forEach(function (item) { courseDesc[item.course_id] = item.course_description; });
+        const programMap = {};
+        MHLW_PROGRAMS.forEach(function (p) { programMap[p.id] = p; });
 
-        const html = courses.map(function (courseId) {
-          const items = catalog.filter(function (i) { return i.course_id === courseId; });
-          if (!items.length) return '';
-          const files = items.map(function (item) {
-            if (item.status !== 'ready') {
-              return '<div class="mhlw-file" style="opacity:.7;"><div><div class="mhlw-file-label">' +
-                escapeHtml(item.label) + '</div><div class="mhlw-file-title">取得不可: ' +
-                escapeHtml(item.error || '不明') + '</div></div></div>';
-            }
-            const cls = item.change_type === 'updated' ? ' updated' : (item.change_type === 'new' ? ' new' : '');
-            const badge = item.change_type === 'new'
-              ? '<span class="mhlw-badge mhlw-badge-new">新規</span>'
-              : (item.change_type === 'updated' ? '<span class="mhlw-badge mhlw-badge-updated">更新</span>' : '');
-            const changes = (item.change_reasons || []).length
-              ? '<div class="mhlw-change"><strong>内容の更新</strong><ul style="margin:4px 0 0;padding-left:16px;">' +
-                item.change_reasons.map(function (r) { return '<li>' + escapeHtml(r) + '</li>'; }).join('') +
-                '</ul></div>'
-              : '';
-            return '<div class="mhlw-file' + cls + '">' +
-              '<div style="flex:1;min-width:0;">' +
-              '<div class="mhlw-file-label">' + escapeHtml(item.label) + badge + '</div>' +
-              '<div class="mhlw-file-title">' + escapeHtml(item.source_title) + '</div>' +
-              changes +
-              '</div>' +
-              '<div style="display:flex;gap:6px;flex-shrink:0;">' +
-              '<a class="btn btn-xs btn-primary" href="' + escapeHtml(item.url) + '" target="_blank" rel="noopener">開く</a>' +
-              '<a class="btn btn-xs" href="' + escapeHtml(item.url) + '" target="_blank" rel="noopener" download>DL</a>' +
-              '</div></div>';
-          }).join('');
+        const html = MHLW_PROGRAM_ORDER.map(function (programId) {
+          const program = programMap[programId];
+          if (!program) return '';
+          const items = catalog.filter(function (i) { return i.program_id === programId; });
+          const grantBlock = renderMhlwGrantCourses(program);
+
+          if (!items.length && !grantBlock) return '';
+
+          const grouped = {};
+          items.forEach(function (item) {
+            const key = item.course_id || programId;
+            if (!grouped[key]) grouped[key] = { name: item.course_name || program.name, desc: item.course_description || program.description, items: [] };
+            grouped[key].items.push(item);
+          });
+
+          let docsHtml = '';
+          Object.keys(grouped).forEach(function (key) {
+            const group = grouped[key];
+            const showSubhead = program.mode === 'specs' && Object.keys(grouped).length > 1;
+            docsHtml += (showSubhead
+              ? '<div style="font-size:13px;font-weight:800;margin:12px 0 8px;color:var(--t1);">' + escapeHtml(group.name) + '</div>' +
+                '<div style="font-size:12px;color:var(--t2);margin-bottom:8px;">' + escapeHtml(group.desc) + '</div>'
+              : '');
+            docsHtml += group.items.map(renderMhlwFileItem).join('');
+          });
+
+          if (!docsHtml && items.length === 0) {
+            docsHtml = '<div style="color:var(--t3);font-size:12px;margin-bottom:8px;">公式資料を取得できませんでした。</div>';
+          }
+
           return '<div class="card mb18">' +
-            '<div style="font-size:15px;font-weight:800;margin-bottom:4px;">' + escapeHtml(courseNames[courseId] || courseId) + '</div>' +
-            '<div style="font-size:12px;color:var(--t2);margin-bottom:12px;">' + escapeHtml(courseDesc[courseId] || '') + '</div>' +
-            files +
+            '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:8px;">' +
+            '<div><div style="font-size:15px;font-weight:800;margin-bottom:4px;">' + escapeHtml(program.name) + '</div>' +
+            '<div style="font-size:12px;color:var(--t2);">' + escapeHtml(program.description) + '</div></div>' +
+            '<a class="btn btn-xs" href="' + escapeHtml(program.source_url) + '" target="_blank" rel="noopener">厚労省ページ</a>' +
+            '</div>' +
+            grantBlock +
+            (docsHtml ? '<div style="font-size:12px;font-weight:800;color:var(--t3);margin-bottom:8px;">公式紹介資料</div>' + docsHtml : '') +
             '</div>';
         }).join('');
 
@@ -5100,11 +5200,12 @@
             const when = new Date(data.fetched_at || Date.now()).toLocaleString('ja-JP');
             let modeNote = '';
             if (data.mode === 'fallback') {
-              modeNote = '　<span style="color:var(--amber);">※ 暫定表示（最新取得に失敗したため保存済み資料を表示）</span>';
+              modeNote = '　<span style="color:var(--amber);">※ 暫定表示（保存済み資料を表示）</span>';
             } else if (data.mode === 'proxy') {
               modeNote = '　<span style="color:var(--teal);">※ 厚労省サイトから直接取得</span>';
             }
-            meta.innerHTML = '取得元: <a href="' + escapeHtml(data.source_url || MHLW_SOURCE_URL) + '" target="_blank" rel="noopener" style="color:var(--blue);">厚生労働省 人材開発支援助成金</a>　／　確認: ' + escapeHtml(when) + modeNote;
+            const readyCount = catalog.filter(function (i) { return i.status === 'ready'; }).length;
+            meta.innerHTML = '対象: キャリアアップ・両立支援・人材開発・65歳超・トライアル・働き方改革・業務改善（7制度）　／　資料: ' + readyCount + ' 件　／　確認: ' + escapeHtml(when) + modeNote;
           }
           renderMhlwGuidesNotice(catalog);
           renderMhlwGuidesSummary(catalog);
