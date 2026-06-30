@@ -1678,7 +1678,7 @@
                   <div style="font-size:13px;font-weight:700;color:var(--blue);">日程調整・次回面談を設定</div>
                   <div style="font-size:11px;color:var(--t3);">Googleカレンダーで予定を管理</div>
                 </div>
-                <button class="btn btn-sm btn-primary" onclick="navTo('calendar')">カレンダーへ</button>
+                <button class="btn btn-sm btn-primary" onclick="openCalEventFromHearing()">案件を登録</button>
               </div>
             </div>
           </div>
@@ -1823,7 +1823,7 @@
             <div>
               <div style="font-size:13px;font-weight:700;color:var(--amber);">Googleカレンダー連携</div>
 
-              <div style="font-size:12px;color:var(--t2);">下の「Googleカレンダーで開く」からアクセスできます。予定追加後に自動同期されます。</div>
+              <div style="font-size:12px;color:var(--t2);">案件登録時にGoogleカレンダーへ直接追加できます（保存後に登録画面が開きます）。</div>
             </div>
             <a href="https://calendar.google.com" target="_blank" class="btn btn-sm"
               style="flex-shrink:0;text-decoration:none;">Googleカレンダーで開く 🔗</a>
@@ -1837,7 +1837,7 @@
           <button class="btn btn-sm" onclick="calPrev()">◀</button>
           <div class="cal-nav-title" id="cal-title"></div>
           <button class="btn btn-sm" onclick="calNext()">▶</button>
-          <button class="btn btn-sm btn-primary" onclick="openCalEventModal()">＋ 予定追加</button>
+          <button class="btn btn-sm btn-primary" onclick="openCalEventModal()">＋ 案件登録</button>
         </div>
         <!-- カレンダーグリッド -->
         <div class="cal-grid" id="cal-head"></div>
@@ -2179,9 +2179,13 @@
     <div class="modal-bg" id="cal-event-modal">
 
       <div class="modal">
-        <div class="modal-title" id="cal-modal-title">📅 予定を追加</div>
+        <div class="modal-title" id="cal-modal-title">📅 案件・予定を登録</div>
 
         <input type="hidden" id="cev-id">
+        <div class="form-group">
+          <div class="form-label">企業名（案件）<span class="req">*</span></div><input class="finp" id="cev-company"
+            placeholder="例：株式会社〇〇" onblur="syncCalEventCompanyTitle()">
+        </div>
         <div class="form-group">
           <div class="form-label">タイトル<span class="req">*</span></div><input class="finp" id="cev-title"
             placeholder="例：〇〇株式会社 面談">
@@ -2218,15 +2222,17 @@
           </div>
           <input type="hidden" id="cev-color" value="blue">
         </div>
-        <div
-          style="background:var(--blue-bg);border-radius:var(--r);padding:10px 12px;font-size:12px;color:var(--blue);margin-bottom:14px;">
-          💡 保存後、Googleカレンダーにも追加するボタンが表示されます
-        </div>
+        <label
+          style="display:flex;align-items:center;gap:8px;background:var(--blue-bg);border-radius:var(--r);padding:10px 12px;font-size:12px;color:var(--blue);margin-bottom:14px;cursor:pointer;">
+          <input type="checkbox" id="cev-gcal" checked onchange="updateCalEventSaveLabel()" style="width:16px;height:16px;accent-color:var(--blue);">
+          Googleカレンダーにも登録する（保存後に登録画面を開きます）
+        </label>
         <div class="btn-row">
           <button class="btn" onclick="closeModal('cal-event-modal')">キャンセル</button>
           <button class="btn btn-danger btn-sm" id="cev-del-btn" onclick="deleteCalEvent()"
             style="display:none;">削除</button>
-          <button class="btn btn-primary" onclick="saveCalEvent()">保存</button>
+          <button class="btn btn-sm" id="cev-gcal-open-btn" onclick="openCalEventInGoogle()" style="display:none;">Googleカレンダーで開く</button>
+          <button class="btn btn-primary" id="cev-save-btn" onclick="saveCalEvent()">保存してGoogleカレンダーに登録</button>
         </div>
       </div>
     </div>
@@ -4203,6 +4209,114 @@
         el.style.border = '3px solid var(--t1)';
       };
 
+      function buildGoogleCalendarEventUrl(event) {
+        var date = event.date || '';
+        var time = event.time || '10:00';
+        var startDate = new Date(date + 'T' + time + ':00');
+        if (isNaN(startDate.getTime())) return null;
+        var endDate = new Date(startDate.getTime() + 60 * 60 * 1000);
+
+        function fmt(d) {
+          return d.getFullYear()
+            + ('0' + (d.getMonth() + 1)).slice(-2)
+            + ('0' + d.getDate()).slice(-2)
+            + 'T'
+            + ('0' + d.getHours()).slice(-2)
+            + ('0' + d.getMinutes()).slice(-2)
+            + '00';
+        }
+
+        var details = [];
+        if (event.company) details.push('企業名: ' + event.company);
+        if (event.note) details.push(event.note);
+        if (event.memberId) {
+          for (var i = 0; i < MEMBERS.length; i++) {
+            if (MEMBERS[i].id === event.memberId) {
+              details.push('担当メンバー: ' + MEMBERS[i].name);
+              break;
+            }
+          }
+        }
+
+        var title = event.title || '';
+        if (event.company && title.indexOf(event.company) < 0) {
+          title = event.company + (title ? ' ' + title : ' 面談');
+        }
+
+        return 'https://calendar.google.com/calendar/render?action=TEMPLATE'
+          + '&text=' + encodeURIComponent(title)
+          + '&dates=' + fmt(startDate) + '/' + fmt(endDate)
+          + '&details=' + encodeURIComponent(details.join('\n'))
+          + '&ctz=' + encodeURIComponent('Asia/Tokyo');
+      }
+
+      function readCalEventForm() {
+        var company = document.getElementById('cev-company').value.trim();
+        var title = document.getElementById('cev-title').value.trim();
+        return {
+          id: document.getElementById('cev-id').value,
+          company: company,
+          title: title,
+          date: document.getElementById('cev-date').value,
+          time: document.getElementById('cev-time').value,
+          memberId: document.getElementById('cev-member').value,
+          note: document.getElementById('cev-note').value.trim(),
+          color: document.getElementById('cev-color').value
+        };
+      }
+
+      function syncCalEventCompanyTitle() {
+        var company = document.getElementById('cev-company').value.trim();
+        var titleEl = document.getElementById('cev-title');
+        var title = titleEl.value.trim();
+        if (!company) return;
+        if (!title || /面談$/.test(title) || title === company) {
+          titleEl.value = company + ' 面談';
+        }
+      }
+
+      function updateCalEventSaveLabel() {
+        var gcal = document.getElementById('cev-gcal');
+        var btn = document.getElementById('cev-save-btn');
+        if (!gcal || !btn) return;
+        btn.textContent = gcal.checked ? '保存してGoogleカレンダーに登録' : '保存';
+      }
+
+      window.openCalEventInGoogle = function () {
+        var e = readCalEventForm();
+        if (!e.company && !e.title) {
+          showToast('企業名またはタイトルを入力してください', false);
+          return;
+        }
+        var url = buildGoogleCalendarEventUrl(e);
+        if (!url) {
+          showToast('日付・時間を確認してください', false);
+          return;
+        }
+        window.open(url, '_blank', 'noopener');
+      };
+
+      window.syncCalEventCompanyTitle = syncCalEventCompanyTitle;
+      window.updateCalEventSaveLabel = updateCalEventSaveLabel;
+
+      window.openCalEventFromHearing = function () {
+        var company = document.getElementById('hv-company').value.trim();
+        var contact = document.getElementById('hv-contact').value.trim();
+        if (!company) {
+          showToast('企業名を入力してください', false);
+          return;
+        }
+        navTo('calendar');
+        setTimeout(function () {
+          openCalEventModal('', '');
+          document.getElementById('cev-company').value = company;
+          document.getElementById('cev-title').value = company + ' 面談';
+          if (contact) document.getElementById('cev-note').value = '担当者: ' + contact;
+          document.getElementById('cev-gcal').checked = true;
+          updateCalEventSaveLabel();
+        }, 80);
+      };
+
       window.openCalEventModal = function (dateStr, eventId) {
         dateStr = dateStr || '';
         eventId = eventId || '';
@@ -4219,6 +4333,7 @@
         if (eventId) {
           var e = CAL_EVENTS.find(function (x) { return x.id === eventId; });
           if (e) {
+            document.getElementById('cev-company').value = e.company || '';
             document.getElementById('cev-title').value = e.title;
             document.getElementById('cev-time').value = e.time || '10:00';
             document.getElementById('cev-member').value = e.memberId || '';
@@ -4227,29 +4342,35 @@
             calSelColor = e.color || 'blue';
           }
         } else {
+          document.getElementById('cev-company').value = '';
           document.getElementById('cev-title').value = '';
           document.getElementById('cev-note').value = '';
           document.getElementById('cev-time').value = '10:00';
           calSelColor = 'blue';
         }
+        document.getElementById('cev-gcal').checked = !eventId;
+        document.getElementById('cev-gcal-open-btn').style.display = eventId ? '' : 'none';
+        updateCalEventSaveLabel();
         document.getElementById('cal-event-modal').classList.add('on');
       };
 
       window.saveCalEvent = function () {
-        var title = document.getElementById('cev-title').value.trim();
-        if (!title) { showToast('タイトルを入力してください', false); return; }
-        var id = document.getElementById('cev-id').value;
-        var e = {
-          id: id || 'ev' + Date.now(),
-          title: title,
-          date: document.getElementById('cev-date').value,
-          time: document.getElementById('cev-time').value,
-          memberId: document.getElementById('cev-member').value,
-          note: document.getElementById('cev-note').value.trim(),
-          color: document.getElementById('cev-color').value
-        };
-        if (id) {
-          var idx = CAL_EVENTS.findIndex(function (x) { return x.id === id; });
+        var e = readCalEventForm();
+        if (!e.company && !e.title) {
+          showToast('企業名またはタイトルを入力してください', false);
+          return;
+        }
+        if (!e.date) {
+          showToast('日付を入力してください', false);
+          return;
+        }
+        syncCalEventCompanyTitle();
+        e.title = document.getElementById('cev-title').value.trim();
+        e.id = e.id || 'ev' + Date.now();
+        var addToGoogle = document.getElementById('cev-gcal').checked;
+
+        if (e.id && CAL_EVENTS.some(function (x) { return x.id === e.id; })) {
+          var idx = CAL_EVENTS.findIndex(function (x) { return x.id === e.id; });
           if (idx >= 0) CAL_EVENTS[idx] = e;
         } else {
           CAL_EVENTS.push(e);
@@ -4257,19 +4378,17 @@
         LS.set('cal_events', CAL_EVENTS);
         closeModal('cal-event-modal');
         renderCalendar();
-        showToast('予定を追加しました');
 
-        // Googleカレンダーに登録するか確認
-        if (confirm('Googleカレンダーにも登録しますか？')) {
-          var dateStr = e.date.replace(/-/g, '');
-          var timeStr = (e.time || '10:00').replace(':', '') + '00';
-          var endH = parseInt(e.time || '10') + 1;
-          var endTime = ('0' + endH).slice(-2) + (e.time || '10:00').slice(2) + '00';
-          var gcalUrl = 'https://calendar.google.com/calendar/r/eventedit'
-            + '?text=' + encodeURIComponent(e.title)
-            + '&dates=' + dateStr + 'T' + timeStr + '/' + dateStr + 'T' + endTime.replace(':', '')
-            + '&details=' + encodeURIComponent(e.note || '');
-          window.open(gcalUrl, '_blank');
+        if (addToGoogle) {
+          var gcalUrl = buildGoogleCalendarEventUrl(e);
+          if (gcalUrl) {
+            window.open(gcalUrl, '_blank', 'noopener');
+            showToast('保存しました。Googleカレンダーで内容を確認して保存してください');
+          } else {
+            showToast('予定を保存しました（Googleカレンダー用URLの生成に失敗）', false);
+          }
+        } else {
+          showToast('予定を保存しました');
         }
       };
 
